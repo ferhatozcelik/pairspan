@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pairspan — Bridge your Mac and Android</title>
+<meta name="description" content="Pairspan connects your computer to your Android phone over ADB, wirelessly and automatically. Download for macOS, Windows or Android.">
+<meta name="theme-color" content="#0f3d2e">
+<link rel="icon" href="icon.png">
+<meta property="og:title" content="Pairspan — Bridge your Mac and Android">
+<meta property="og:description" content="Pair once. Connect wirelessly. Deploy effortlessly.">
+<meta property="og:image" content="icon.png">
+<style>
+:root{
+  --bg:#f6faf7;--surface:#ffffff;--surface-2:#eef5f0;--text:#12302a;--muted:#54706a;--line:#dbe8e0;
+  --brand:#197653;--brand-2:#27a577;--brand-ink:#ffffff;--glow:rgba(39,165,119,.22);--shadow:0 20px 50px -24px rgba(18,48,42,.35);
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#0b1411;--surface:#121f1a;--surface-2:#172923;--text:#e8f3ee;--muted:#93aaa1;--line:#223630;--brand:#3ec28f;--brand-2:#2aa27a;--brand-ink:#06251a;--glow:rgba(62,194,143,.18);--shadow:0 20px 50px -24px rgba(0,0,0,.7)}
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+html,body{overflow-x:hidden}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+.wrap{max-width:1040px;margin:0 auto;padding:0 20px}
+header{position:sticky;top:0;z-index:10;backdrop-filter:blur(14px);background:color-mix(in srgb,var(--bg) 78%,transparent);border-bottom:1px solid var(--line)}
+header .wrap{display:flex;align-items:center;justify-content:space-between;height:64px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:-.02em;text-decoration:none}
+.brand img{width:32px;height:32px;border-radius:8px}
+nav{display:flex;gap:22px;align-items:center;font-size:.95rem}
+nav a{text-decoration:none;color:var(--muted)}
+nav a:hover{color:var(--text)}
+nav .lang{background:none;border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:5px 12px;font:600 .8rem Inter,system-ui,sans-serif;cursor:pointer}
+nav .lang b{color:var(--brand)}
+nav .lang:hover{color:var(--text)}
+nav .pill{background:var(--brand);color:var(--brand-ink);padding:8px 16px;border-radius:999px;font-weight:700}
+nav .pill:hover{color:var(--brand-ink);filter:brightness(1.05)}
+.hero{position:relative;overflow:hidden;padding:84px 0 40px;text-align:center}
+.hero::before{content:"";position:absolute;inset:-200px 0 auto;height:520px;background:radial-gradient(60% 60% at 50% 40%,var(--glow),transparent 70%);pointer-events:none}
+.eyebrow{display:inline-flex;gap:8px;align-items:center;font-size:.85rem;font-weight:700;color:var(--brand);background:var(--surface);border:1px solid var(--line);padding:6px 14px;border-radius:999px}
+.eyebrow i{width:8px;height:8px;border-radius:50%;background:var(--brand-2);box-shadow:0 0 0 4px var(--glow)}
+h1{font-size:clamp(2.4rem,6.4vw,4.4rem);line-height:1.04;letter-spacing:-.045em;margin:22px auto 18px;max-width:780px}
+h1 span{background:linear-gradient(90deg,var(--brand),var(--brand-2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.lead{max-width:620px;margin:0 auto;color:var(--muted);font-size:1.15rem}
+.cta{display:flex;flex-direction:column;align-items:center;gap:14px;margin:34px 0 8px}
+.btn{display:inline-flex;align-items:center;gap:10px;background:var(--brand);color:var(--brand-ink);text-decoration:none;font-weight:800;padding:15px 26px;border-radius:14px;box-shadow:0 12px 30px -12px var(--brand);transition:transform .15s,filter .15s}
+.btn:hover{transform:translateY(-2px);filter:brightness(1.06)}
+.btn svg{width:20px;height:20px;fill:currentColor}
+.btn.ghost{background:var(--surface);color:var(--text);border:1px solid var(--line);box-shadow:none}
+.meta{font-size:.88rem;color:var(--muted)}
+.meta a{color:var(--brand);font-weight:600}
+.stage{margin:54px auto 0;max-width:760px;display:grid;grid-template-columns:1fr 150px 1fr;align-items:center;gap:6px}
+.stage>*{min-width:0}
+.device code{overflow-wrap:anywhere}
+.device{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:var(--shadow);text-align:left}
+.device .bar{display:flex;gap:6px;margin-bottom:14px}
+.device .bar b{width:9px;height:9px;border-radius:50%;background:var(--line)}
+.device h4{margin:0 0 4px;font-size:.95rem}
+.device p{margin:0;font-size:.82rem;color:var(--muted)}
+.device code{display:block;margin-top:12px;font:600 .78rem ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--surface-2);padding:8px 10px;border-radius:8px;color:var(--brand)}
+.phone{max-width:230px;margin-left:auto;border-radius:26px}
+.link{position:relative;height:2px;background:repeating-linear-gradient(90deg,var(--brand-2) 0 8px,transparent 8px 16px);animation:flow 1.2s linear infinite}
+.link::after{content:"wss://";position:absolute;left:50%;top:-26px;transform:translateX(-50%);font:700 .72rem ui-monospace,Menlo,monospace;color:var(--muted)}
+@keyframes flow{to{background-position:16px 0}}
+@media (prefers-reduced-motion:reduce){.link{animation:none}}
+section{padding:72px 0}
+section h2{font-size:clamp(1.7rem,3.6vw,2.4rem);letter-spacing:-.035em;line-height:1.15;margin:0 0 10px;text-align:center}
+section .sub{color:var(--muted);text-align:center;max-width:560px;margin:0 auto 38px}
+.grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:24px}
+.card .ic{width:42px;height:42px;border-radius:12px;background:var(--surface-2);display:grid;place-items:center;margin-bottom:14px;color:var(--brand)}
+.card .ic svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.card h3{margin:0 0 6px;font-size:1.05rem}
+.card p{margin:0;color:var(--muted);font-size:.95rem}
+.steps{counter-reset:s;display:grid;gap:14px;max-width:720px;margin:0 auto}
+.step{display:flex;gap:16px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 20px}
+.step::before{counter-increment:s;content:counter(s);flex:none;width:32px;height:32px;border-radius:50%;background:var(--brand);color:var(--brand-ink);font-weight:800;display:grid;place-items:center}
+.step b{display:block}
+.step span{color:var(--muted);font-size:.95rem}
+.dl{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.dl .card{display:flex;flex-direction:column;gap:10px;position:relative;transition:border-color .2s,transform .2s}
+.dl .card.on{border-color:var(--brand);box-shadow:0 0 0 4px var(--glow)}
+.dl .card.on::after{content:attr(data-rec);position:absolute;top:-12px;left:20px;background:var(--brand);color:var(--brand-ink);font-size:.72rem;font-weight:800;padding:3px 10px;border-radius:999px}
+.dl h3{display:flex;align-items:center;gap:10px}
+.dl h3 svg{width:26px;height:26px;fill:var(--brand)}
+.dl .btn{justify-content:center;margin-top:auto;padding:12px 18px;font-size:.95rem}
+.dl small{color:var(--muted)}
+.note{max-width:720px;margin:26px auto 0;text-align:center;color:var(--muted);font-size:.92rem}
+pre{max-width:720px;margin:18px auto 0;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;overflow:auto;font:.88rem/1.7 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--text)}
+pre em{color:var(--muted);font-style:normal}
+details.help{max-width:720px;margin:28px auto 0;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:4px 20px}
+details.help summary{cursor:pointer;font-weight:700;padding:14px 0;list-style:none}
+details.help summary::-webkit-details-marker{display:none}
+details.help summary::before{content:"+";display:inline-block;width:22px;color:var(--brand);font-weight:800}
+details.help[open] summary::before{content:"–"}
+details.help p,details.help li{color:var(--muted);font-size:.95rem}
+details.help ol{padding-left:20px;margin:0 0 4px}
+details.help pre{margin:10px 0 16px;max-width:none}
+footer{border-top:1px solid var(--line);padding:30px 0 50px;color:var(--muted);font-size:.9rem}
+footer .wrap{display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:space-between}
+footer a{text-decoration:none}
+footer a:hover{color:var(--text)}
+@media (max-width:720px){
+  nav a:not(.pill){display:none}
+  .stage{grid-template-columns:minmax(0,1fr);gap:26px}
+  .link{height:34px;width:2px;margin:0 auto;background:repeating-linear-gradient(180deg,var(--brand-2) 0 8px,transparent 8px 16px);animation:none}
+  .link::after{left:14px;top:50%;transform:translateY(-50%)}
+  .phone{margin:0 auto;max-width:none}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a class="brand" href="#top"><img src="icon.png" alt="" width="32" height="32">Pairspan</a>
+    <nav>
+      <a href="#features" data-i18n="nav.features">Features</a>
+      <a href="#how" data-i18n="nav.how">How it works</a>
+      <a href="https://github.com/ferhatozcelik/pairspan">GitHub</a>
+      <button class="lang" id="lang" type="button" aria-label="Language"><b>EN</b> / TR</button>
+      <a class="pill" href="#download" data-i18n="nav.download">Download</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <div class="hero">
+    <div class="wrap">
+      <span class="eyebrow"><i></i><span data-i18n="hero.eyebrow">Wireless ADB pairing</span></span>
+      <h1 data-i18n-html="hero.title">Bridge your computer and <span>Android</span>.</h1>
+      <p class="lead" data-i18n="hero.lead">Pairspan connects your phone to your computer over ADB, wirelessly and automatically, so you can install, debug and mirror without a USB cable.</p>
+      <div class="cta">
+        <a class="btn" id="primary" href="#download">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11.2l3.6-3.6 1.4 1.4-6 6-6-6 1.4-1.4 3.6 3.6V3zM5 19h14v2H5z"/></svg>
+          <span id="primaryLabel" data-i18n="dl.generic">Download Pairspan</span>
+        </a>
+        <div class="meta" id="primaryMeta" data-i18n-html="hero.meta">Free · macOS, Windows and Android · <a href="#download">All downloads</a></div>
+      </div>
+
+      <div class="stage" aria-hidden="true">
+        <div class="device">
+          <div class="bar"><b></b><b></b><b></b></div>
+          <h4 data-i18n="stage.desktop">Desktop</h4>
+          <p data-i18n="stage.tray">Pairspan tray app</p>
+          <code>adb connect 127.0.0.1:44755</code>
+        </div>
+        <div class="link"></div>
+        <div class="device phone">
+          <h4 data-i18n="stage.phone">Phone</h4>
+          <p data-i18n="stage.ready">Connected · ADB ready</p>
+          <code>shell · uid 2000</code>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section id="features">
+    <div class="wrap">
+      <h2 data-i18n="feat.title">Everything you need, nothing you don’t</h2>
+      <p class="sub" data-i18n="feat.sub">A small tray app, a small Android app, and a gateway that links them.</p>
+      <div class="grid">
+        <div class="card"><div class="ic"><svg viewBox="0 0 24 24"><path d="M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0M12 19.5h.01"/></svg></div><h3 data-i18n="f1.t">Wireless by default</h3><p data-i18n="f1.d">Connect over Wi-Fi or mobile data through your gateway. No cable once it is set up.</p></div>
+        <div class="card"><div class="ic"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h10M4 17h7"/><circle cx="18" cy="16" r="3"/></svg></div><h3 data-i18n="f2.t">Token pairing</h3><p data-i18n="f2.d">Scan the desktop QR or enter its token. A saved session reconnects on its own.</p></div>
+        <div class="card"><div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></div><h3 data-i18n="f3.t">Works with your tools</h3><p data-i18n-html="f3.d">Use <code>adb</code>, Android Studio or scripts through a local endpoint on <code>127.0.0.1:44755</code>.</p></div>
+        <div class="card"><div class="ic"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V6z"/></svg></div><h3 data-i18n="f4.t">Your gateway</h3><p data-i18n="f4.d">Point Pairspan at your own WebSocket gateway and, if you want, protect it with a shared token.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="how" style="padding-top:0">
+    <div class="wrap">
+      <h2 data-i18n="how.title">Up and running in three steps</h2>
+      <p class="sub" data-i18n="how.sub">Install on both devices, open them, done.</p>
+      <div class="steps">
+        <div class="step"><div><b data-i18n="s1.t">Install the desktop app</b><span data-i18n="s1.d">It lives in your menu bar or system tray and keeps the connection alive.</span></div></div>
+        <div class="step"><div><b data-i18n="s2.t">Install the Android app</b><span data-i18n="s2.d">Allow the permissions it asks for. Pairspan can use ADB’s shell access once wireless debugging is on.</span></div></div>
+        <div class="step"><div><b data-i18n="s3.t">Pair</b><span data-i18n="s3.d">Scan the desktop QR or enter the token. When the phone shows “Connection ready”, your tools can use it.</span></div></div>
+      </div>
+      <pre><em data-i18n="how.code"># after both apps say “ready”</em>
+adb connect 127.0.0.1:44755
+adb -s 127.0.0.1:44755 shell id</pre>
+    </div>
+  </section>
+
+  <section id="download" style="background:var(--surface-2)">
+    <div class="wrap">
+      <h2 data-i18n="dl.title">Download Pairspan</h2>
+      <p class="sub" id="dlSub" data-i18n="dl.sub">Pick the build for your system. You need the desktop app and the Android app.</p>
+      <div class="dl">
+        <div class="card" data-os="mac">
+          <h3><svg viewBox="0 0 24 24"><path d="M16.4 12.6c0-2.3 1.9-3.4 2-3.5-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.1-2.8.9-3.5.9-.7 0-1.8-.8-3-.8-1.5 0-3 .9-3.8 2.3-1.6 2.8-.4 6.9 1.2 9.200.8 1.100 1.700 2.300 2.900 2.300 1.200 0 1.600-.7 3-.7s1.800.7 3 .7 2-1.100 2.800-2.200c.9-1.300 1.200-2.500 1.300-2.600-.1 0-2.500-1-2.500-3.800zM14.100 5.800c.6-.8 1.100-1.800.9-2.800-.9 0-2 .6-2.600 1.400-.6.700-1.100 1.700-.9 2.700 1 .1 2-.5 2.600-1.300z"/></svg>macOS</h3>
+          <p style="margin:0;color:var(--muted)" data-i18n="mac.d">Menu bar app for Apple silicon and Intel Macs.</p>
+          <small data-size="mac">.dmg</small>
+          <a class="btn" data-asset="mac" href="https://github.com/ferhatozcelik/pairspan/releases/download/v1.0.0/pairspan-mac-1.0.0.dmg" data-i18n="btn.mac">Download for macOS</a>
+        </div>
+        <div class="card" data-os="windows">
+          <h3><svg viewBox="0 0 24 24"><path d="M3 5.500 10.500 4.500v7H3zM11.500 4.400 21 3v8.500h-9.500zM3 12.500h7.500v7L3 18.500zM11.500 12.500H21V21l-9.500-1.400z"/></svg>Windows</h3>
+          <p style="margin:0;color:var(--muted)" data-i18n="win.d">System tray app for Windows 10 and later.</p>
+          <small data-size="windows">.exe</small>
+          <a class="btn" data-asset="windows" href="https://github.com/ferhatozcelik/pairspan/releases/download/v1.0.0/pairspan-windows-1.0.0.exe" data-i18n="btn.windows">Download for Windows</a>
+        </div>
+        <div class="card" data-os="android">
+          <h3><svg viewBox="0 0 24 24"><path d="M6 18a1 1 0 0 0 1 1h1v3a1.500 1.500 0 0 0 3 0v-3h2v3a1.500 1.500 0 0 0 3 0v-3h1a1 1 0 0 0 1-1V8H6zM3.500 8A1.500 1.500 0 0 0 2 9.500v6a1.500 1.500 0 0 0 3 0v-6A1.500 1.500 0 0 0 3.500 8zm17 0A1.500 1.500 0 0 0 19 9.500v6a1.500 1.500 0 0 0 3 0v-6A1.500 1.500 0 0 0 20.500 8zM15.500 2.700l1.300-1.300-.7-.7-1.500 1.500A5.900 5.900 0 0 0 12 1.600c-.9 0-1.700.2-2.500.6L8 .7l-.7.700 1.300 1.300A5.500 5.500 0 0 0 6 7h12a5.500 5.500 0 0 0-2.500-4.300zM10 5H9V4h1zm5 0h-1V4h1z"/></svg>Android</h3>
+          <p style="margin:0;color:var(--muted)" data-i18n="and.d">Phone app. Android 8.0 or later; Android 11+ recommended.</p>
+          <small data-size="android">.apk</small>
+          <a class="btn" data-asset="android" href="https://github.com/ferhatozcelik/pairspan/releases/download/v1.0.0/pairspan-android-1.0.0.apk" data-i18n="btn.android">Download APK</a>
+        </div>
+      </div>
+      <details class="help" id="macHelp">
+        <summary data-i18n="gk.title">macOS says it can’t verify Pairspan?</summary>
+        <div>
+          <p data-i18n="gk.intro">Pairspan is not notarized by Apple yet, so macOS asks you to confirm it the first time. It is safe to open if you downloaded it from this page or our GitHub releases.</p>
+          <ol>
+            <li data-i18n-html="gk.s1">Drag <b>Pairspan</b> to <code>Applications</code> and open it once.</li>
+            <li data-i18n-html="gk.s2">Open <b>System Settings → Privacy &amp; Security</b>, scroll down and click <b>Open Anyway</b> next to Pairspan.</li>
+            <li data-i18n="gk.s3">Or run this in Terminal, then open the app again:</li>
+          </ol>
+          <pre>xattr -dr com.apple.quarantine /Applications/Pairspan.app</pre>
+        </div>
+      </details>
+      <p class="note" id="osNote" data-i18n-html="dl.note">Opening the APK on your phone may ask you to allow installs from your browser. <a href="https://github.com/ferhatozcelik/pairspan/releases" style="color:var(--brand);font-weight:600">All releases and older versions</a></p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span data-i18n="foot.license">Pairspan · MIT License</span>
+    <span><a href="https://github.com/ferhatozcelik/pairspan#readme">README</a> · <a href="https://github.com/ferhatozcelik/pairspan" data-i18n="foot.source">Source</a> · <a href="https://github.com/ferhatozcelik/pairspan/releases" data-i18n="foot.releases">Releases</a></span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var REPO='ferhatozcelik/pairspan';
+  var NAME={mac:'macOS',windows:'Windows',android:'Android'};
+
+  var T={
+    en:{
+      'meta.title':'Pairspan — Bridge your Mac and Android',
+      'meta.desc':'Pairspan connects your computer to your Android phone over ADB, wirelessly and automatically. Download for macOS, Windows or Android.',
+      'nav.features':'Features','nav.how':'How it works','nav.download':'Download',
+      'hero.eyebrow':'Wireless ADB pairing',
+      'hero.title':'Bridge your computer and <span>Android</span>.',
+      'hero.lead':'Pairspan connects your phone to your computer over ADB, wirelessly and automatically, so you can install, debug and mirror without a USB cable.',
+      'hero.meta':'Free · macOS, Windows and Android · <a href="#download">All downloads</a>',
+      'dl.generic':'Download Pairspan',
+      'stage.desktop':'Desktop','stage.tray':'Pairspan tray app','stage.phone':'Phone','stage.ready':'Connected · ADB ready',
+      'feat.title':'Everything you need, nothing you don’t','feat.sub':'A small tray app, a small Android app, and a gateway that links them.',
+      'f1.t':'Wireless by default','f1.d':'Connect over Wi-Fi or mobile data through your gateway. No cable once it is set up.',
+      'f2.t':'Token pairing','f2.d':'Scan the desktop QR or enter its token. A saved session reconnects on its own.',
+      'f3.t':'Works with your tools','f3.d':'Use <code>adb</code>, Android Studio or scripts through a local endpoint on <code>127.0.0.1:44755</code>.',
+      'f4.t':'Your gateway','f4.d':'Point Pairspan at your own WebSocket gateway and, if you want, protect it with a shared token.',
+      'how.title':'Up and running in three steps','how.sub':'Install on both devices, open them, done.',
+      's1.t':'Install the desktop app','s1.d':'It lives in your menu bar or system tray and keeps the connection alive.',
+      's2.t':'Install the Android app','s2.d':'Allow the permissions it asks for. Pairspan can use ADB’s shell access once wireless debugging is on.',
+      's3.t':'Pair','s3.d':'Scan the desktop QR or enter the token. When the phone shows “Connection ready”, your tools can use it.',
+      'how.code':'# after both apps say “ready”',
+      'dl.title':'Download Pairspan','dl.sub':'Pick the build for your system. You need the desktop app and the Android app.',
+      'mac.d':'Menu bar app for Apple silicon and Intel Macs.','win.d':'System tray app for Windows 10 and later.','and.d':'Phone app. Android 8.0 or later; Android 11+ recommended.',
+      'btn.mac':'Download for macOS','btn.windows':'Download for Windows','btn.android':'Download APK',
+      'dl.note':'Opening the APK on your phone may ask you to allow installs from your browser. <a href="https://github.com/ferhatozcelik/pairspan/releases" style="color:var(--brand);font-weight:600">All releases and older versions</a>',
+      'foot.source':'Source','foot.releases':'Releases','foot.license':'Pairspan · MIT License',
+      'gk.title':'macOS says it can’t verify Pairspan?',
+      'gk.intro':'Pairspan is not notarized by Apple yet, so macOS asks you to confirm it the first time. It is safe to open if you downloaded it from this page or our GitHub releases.',
+      'gk.s1':'Drag <b>Pairspan</b> to <code>Applications</code> and open it once.',
+      'gk.s2':'Open <b>System Settings → Privacy &amp; Security</b>, scroll down and click <b>Open Anyway</b> next to Pairspan.',
+      'gk.s3':'Or run this in Terminal, then open the app again:',
+      'rec':'Recommended for you',
+      'det.desktop':'Detected {os} · you also need the Android app · <a href="#download">Other platforms</a>',
+      'det.android':'Detected Android · <a href="#download">Other platforms</a>',
+      'sub.android':'You are on Android. Install this APK, then install the desktop app on your computer.',
+      'sub.desktop':'You are on {os}. Install the desktop app here, then the APK on your phone.',
+      'ios.meta':'Pairspan is not available for iPhone or iPad. Open this page on your computer or Android phone.',
+      'ios.sub':'Pairspan works with Android phones. Open this page on your computer or on an Android phone.',
+      'linux.meta':'There is no Linux build yet. You can <a href="https://github.com/'+REPO+'#readme">build the desktop app from source</a>.',
+      'linux.sub':'There is no Linux installer yet. Build the desktop app from source and install the Android APK on your phone.'
+    },
+    tr:{
+      'meta.title':'Pairspan — Mac ve Android’i birbirine bağla',
+      'meta.desc':'Pairspan, bilgisayarını Android telefonuna ADB üzerinden kablosuz ve otomatik bağlar. macOS, Windows veya Android için indir.',
+      'nav.features':'Özellikler','nav.how':'Nasıl çalışır','nav.download':'İndir',
+      'hero.eyebrow':'Kablosuz ADB eşleştirme',
+      'hero.title':'Bilgisayarını ve <span>Android</span>’i birbirine bağla.',
+      'hero.lead':'Pairspan, telefonunu bilgisayarına ADB üzerinden kablosuz ve otomatik bağlar. USB kablosu olmadan uygulama yükleyebilir, hata ayıklayabilir ve ekranı yansıtabilirsin.',
+      'hero.meta':'Ücretsiz · macOS, Windows ve Android · <a href="#download">Tüm indirmeler</a>',
+      'dl.generic':'Pairspan’ı indir',
+      'stage.desktop':'Bilgisayar','stage.tray':'Pairspan tepsi uygulaması','stage.phone':'Telefon','stage.ready':'Bağlı · ADB hazır',
+      'feat.title':'İhtiyacın olan her şey, fazlası yok','feat.sub':'Küçük bir tepsi uygulaması, küçük bir Android uygulaması ve ikisini bağlayan bir gateway.',
+      'f1.t':'Varsayılan olarak kablosuz','f1.d':'Gateway üzerinden Wi-Fi veya mobil veriyle bağlan. Kurulumdan sonra kablo gerekmez.',
+      'f2.t':'Token ile eşleşme','f2.d':'Masaüstündeki QR kodu tara veya token’ı gir. Kayıtlı oturum kendiliğinden devam eder.',
+      'f3.t':'Kendi araçlarınla çalışır','f3.d':'<code>adb</code>, Android Studio veya betiklerini <code>127.0.0.1:44755</code> yerel adresi üzerinden kullan.',
+      'f4.t':'Senin gateway’in','f4.d':'Pairspan’ı kendi WebSocket gateway’ine yönlendir, istersen ortak bir token ile koru.',
+      'how.title':'Üç adımda hazır','how.sub':'İki cihaza da kur, ikisini de aç, bitti.',
+      's1.t':'Bilgisayar uygulamasını kur','s1.d':'Menü çubuğunda veya sistem tepsisinde durur ve bağlantıyı canlı tutar.',
+      's2.t':'Android uygulamasını kur','s2.d':'İstediği izinleri ver. Kablosuz hata ayıklama açıkken Pairspan ADB’nin shell erişimini kullanabilir.',
+      's3.t':'Eşleştir','s3.d':'Masaüstündeki QR kodu tara veya token’ı gir. Telefonda “Bağlantı hazır” yazınca araçların kullanabilir.',
+      'how.code':'# iki uygulama da “hazır” dedikten sonra',
+      'dl.title':'Pairspan’ı indir','dl.sub':'Sistemine uygun sürümü seç. Bilgisayar uygulamasına ve Android uygulamasına ihtiyacın var.',
+      'mac.d':'Apple silikon ve Intel Mac’ler için menü çubuğu uygulaması.','win.d':'Windows 10 ve üzeri için sistem tepsisi uygulaması.','and.d':'Telefon uygulaması. Android 8.0 veya üzeri; Android 11+ önerilir.',
+      'btn.mac':'macOS için indir','btn.windows':'Windows için indir','btn.android':'APK’yı indir',
+      'dl.note':'Telefonda APK’yı açarken tarayıcıdan yüklemeye izin vermen istenebilir. <a href="https://github.com/ferhatozcelik/pairspan/releases" style="color:var(--brand);font-weight:600">Tüm sürümler ve eski versiyonlar</a>',
+      'foot.source':'Kaynak','foot.releases':'Sürümler','foot.license':'Pairspan · MIT Lisansı',
+      'gk.title':'macOS Pairspan’ı doğrulayamadığını mı söylüyor?',
+      'gk.intro':'Pairspan henüz Apple tarafından notarize edilmedi, bu yüzden macOS ilk açılışta onay ister. Bu sayfadan veya GitHub sürümlerimizden indirdiysen güvenle açabilirsin.',
+      'gk.s1':'<b>Pairspan</b>’ı <code>Uygulamalar</code> klasörüne sürükle ve bir kez aç.',
+      'gk.s2':'<b>Sistem Ayarları → Gizlilik ve Güvenlik</b> bölümünü aç, aşağı kaydır ve Pairspan yanındaki <b>Yine de Aç</b>’a tıkla.',
+      'gk.s3':'Ya da Terminal’de şunu çalıştır, sonra uygulamayı tekrar aç:',
+      'rec':'Sana önerilen',
+      'det.desktop':'{os} algılandı · Android uygulamasına da ihtiyacın var · <a href="#download">Diğer platformlar</a>',
+      'det.android':'Android algılandı · <a href="#download">Diğer platformlar</a>',
+      'sub.android':'Android kullanıyorsun. Bu APK’yı kur, sonra bilgisayarına masaüstü uygulamasını kur.',
+      'sub.desktop':'{os} kullanıyorsun. Masaüstü uygulamasını burada kur, APK’yı da telefonuna yükle.',
+      'ios.meta':'Pairspan iPhone veya iPad için mevcut değil. Bu sayfayı bilgisayarında veya Android telefonunda aç.',
+      'ios.sub':'Pairspan Android telefonlarla çalışır. Bu sayfayı bilgisayarında veya bir Android telefonda aç.',
+      'linux.meta':'Henüz Linux sürümü yok. <a href="https://github.com/'+REPO+'#readme">Masaüstü uygulamasını kaynaktan derleyebilirsin</a>.',
+      'linux.sub':'Henüz Linux yükleyicisi yok. Masaüstü uygulamasını kaynaktan derle, Android APK’yı telefonuna kur.'
+    }
+  };
+
+  var lang='en';
+  function storedLang(){try{return localStorage.getItem('pairspan-lang')}catch(e){return null}}
+  function saveLang(v){try{localStorage.setItem('pairspan-lang',v)}catch(e){}}
+  function pickLang(){
+    var q=(location.search.match(/[?&]lang=(en|tr)/)||[])[1];
+    if(q)return q;
+    var st=storedLang();if(st==='en'||st==='tr')return st;
+    var l=(navigator.languages&&navigator.languages[0])||navigator.language||'en';
+    return /^tr/i.test(l)?'tr':'en';
+  }
+  function t(k,vars){
+    var v=(T[lang]&&T[lang][k]);if(v===undefined)v=T.en[k]||k;
+    if(vars)Object.keys(vars).forEach(function(n){v=v.replace('{'+n+'}',vars[n])});
+    return v;
+  }
+
+  function detect(){
+    var ua=navigator.userAgent||'';
+    if(/android/i.test(ua))return 'android';
+    if(/iphone|ipad|ipod/i.test(ua))return 'ios';
+    if(/windows/i.test(ua))return 'windows';
+    if(/cros|linux|x11/i.test(ua))return 'linux';
+    var plat=(navigator.userAgentData&&navigator.userAgentData.platform)||navigator.platform||'';
+    if(/macintosh|mac os x/i.test(ua)||/mac/i.test(plat))return navigator.maxTouchPoints>1&&/MacIntel/.test(plat)?'ios':'mac';
+    if(/win/i.test(plat))return 'windows';
+    return 'other';
+  }
+  var os=detect();
+
+  function render(){
+    document.documentElement.lang=lang;
+    document.title=t('meta.title');
+    var md=document.querySelector('meta[name="description"]');if(md)md.setAttribute('content',t('meta.desc'));
+    var ot=document.querySelector('meta[property="og:title"]');if(ot)ot.setAttribute('content',t('meta.title'));
+    document.querySelectorAll('[data-i18n]').forEach(function(el){el.textContent=t(el.getAttribute('data-i18n'))});
+    document.querySelectorAll('[data-i18n-html]').forEach(function(el){el.innerHTML=t(el.getAttribute('data-i18n-html'))});
+    var b=document.getElementById('lang');
+    if(b)b.innerHTML=lang==='tr'?'EN / <b>TR</b>':'<b>EN</b> / TR';
+    document.querySelectorAll('.dl .card.on').forEach(function(c){c.setAttribute('data-rec',t('rec'))});
+    applyOs();
+  }
+
+  function applyOs(){
+    var primary=document.getElementById('primary');
+    var label=document.getElementById('primaryLabel');
+    var meta=document.getElementById('primaryMeta');
+    var sub=document.getElementById('dlSub');
+    var card=NAME[os]?document.querySelector('.dl .card[data-os="'+os+'"]'):null;
+    if(card){
+      if(!card.classList.contains('on')){card.classList.add('on');var grid=card.parentNode;grid.insertBefore(card,grid.firstChild)}
+      card.setAttribute('data-rec',t('rec'));
+      if(os==='mac'){var h=document.getElementById('macHelp');if(h)h.open=true}
+      var link=card.querySelector('a.btn');
+      if(link){primary.href=link.href;label.textContent=t('btn.'+os)}
+      meta.innerHTML=os==='android'?t('det.android'):t('det.desktop',{os:NAME[os]});
+      sub.textContent=os==='android'?t('sub.android'):t('sub.desktop',{os:NAME[os]});
+    }else if(os==='ios'){
+      meta.innerHTML=t('ios.meta');sub.textContent=t('ios.sub');
+    }else if(os==='linux'){
+      meta.innerHTML=t('linux.meta');sub.textContent=t('linux.sub');
+    }
+  }
+
+  function mb(n){return (n/1048576).toFixed(n>20971520?0:1)+' MB'}
+  function fillSizes(release){
+    var pick={mac:/\.dmg$/i,windows:/\.exe$/i,android:/\.apk$/i};
+    (release.assets||[]).forEach(function(a){
+      Object.keys(pick).forEach(function(k){
+        if(pick[k].test(a.name)){
+          var btn=document.querySelector('a[data-asset="'+k+'"]');
+          var size=document.querySelector('[data-size="'+k+'"]');
+          if(btn){btn.href=a.browser_download_url;if(os===k)document.getElementById('primary').href=a.browser_download_url}
+          if(size)size.textContent=release.tag_name+' · '+a.name.split('.').pop()+' · '+mb(a.size);
+        }
+      });
+    });
+  }
+
+  lang=pickLang();
+  render();
+  var lb=document.getElementById('lang');
+  if(lb)lb.addEventListener('click',function(){lang=lang==='tr'?'en':'tr';saveLang(lang);render()});
+  try{
+    fetch('https://api.github.com/repos/'+REPO+'/releases/latest',{headers:{Accept:'application/vnd.github+json'}})
+      .then(function(r){return r.ok?r.json():null})
+      .then(function(rel){if(rel)fillSizes(rel)})
+      .catch(function(){});
+  }catch(e){}
+})();
+</script>
+</body>
+</html>

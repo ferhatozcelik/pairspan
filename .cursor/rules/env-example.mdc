@@ -1,0 +1,14 @@
+---
+description: Pairspan keeps only .env.example files
+alwaysApply: true
+---
+
+# Env files
+
+The only env files are:
+
+- `web/.env.example`
+- `mac/.env.example`
+- `android/.env.example`
+
+Do not add `.env`, `.env.local`, or `.env.production`. Each `.env.example` has `GATEWAY_PUBLIC_URL` and an empty `GATEWAY_TOKEN`. The live token is the GitHub secret `GATEWAY_TOKEN`, not a value in the repo. Android Gradle and the Mac app read `.env.example` and send that token on `hello`.

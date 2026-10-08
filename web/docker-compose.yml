@@ -1,0 +1,10 @@
+# One container is enough: sessions stay in memory.
+services:
+  pairspan:
+    image: pairspan:latest
+    container_name: pairspan
+    restart: always
+    env_file:
+      - ./temp.env
+    ports:
+      - "127.0.0.1:16200:3000"

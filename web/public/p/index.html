@@ -1,0 +1,5 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Open Pairspan</title><style>body{font:16px system-ui;max-width:500px;margin:80px auto;padding:20px;color:#173c2d}a{color:#197653}</style></head><body><h1>Open Pairspan</h1><p id="message">Opening the Android app…</p><p><a id="open" href="#">Tap to open Pairspan</a></p><p><a href="../">Pairspan setup</a></p><script>
+const params=new URLSearchParams(location.search);const code=(params.get('c')||'').replace(/-/g,'').toUpperCase();const gateway=params.get('g')||'';
+const validCode=/^[23456789ABCDEFGHJKMNPQRSTUVWXYZ]{20}$/.test(code);const validGateway=/^(wss?|https?):\/\/[^\s]+$/.test(gateway);
+if(validCode&&validGateway){const link=`pairspan://pair?code=${code}&g=${encodeURIComponent(gateway)}`;document.getElementById('open').href=link;location.replace(link)}else{document.getElementById('message').textContent='Invalid pairing link. Scan the QR in Pairspan or enter the code manually.';document.getElementById('open').hidden=true}
+</script></body></html>

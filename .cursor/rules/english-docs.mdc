@@ -1,0 +1,10 @@
+---
+description: Pairspan markdown is English
+alwaysApply: true
+---
+
+# English docs
+
+README files, `CONTRIBUTING.md`, `SECURITY.md`, `CHANGELOG.md`, and `web/public/*.md` are English.
+
+The site at `web/public/index.html` may keep its English and Turkish switcher.

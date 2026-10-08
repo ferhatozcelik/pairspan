@@ -1,0 +1,51 @@
+name: Deploy web
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require secrets
+        env:
+          DEVOPS_PAT: ${{ secrets.DEVOPS_PAT }}
+          ARTIFACT_TOKEN: ${{ secrets.ARTIFACT_TOKEN }}
+          NODE_ENV: ${{ secrets.NODE_ENV }}
+          GATEWAY_PUBLIC_URL: ${{ secrets.GATEWAY_PUBLIC_URL }}
+          GATEWAY_TOKEN: ${{ secrets.GATEWAY_TOKEN }}
+        run: |
+          test -n "$DEVOPS_PAT"
+          test -n "$ARTIFACT_TOKEN"
+          test -n "$NODE_ENV"
+          test -n "$GATEWAY_PUBLIC_URL"
+          test -n "$GATEWAY_TOKEN"
+
+      - name: Trigger devops
+        env:
+          GH_TOKEN: ${{ secrets.DEVOPS_PAT }}
+          ARTIFACT_TOKEN: ${{ secrets.ARTIFACT_TOKEN }}
+          NODE_ENV: ${{ secrets.NODE_ENV }}
+          GATEWAY_PUBLIC_URL: ${{ secrets.GATEWAY_PUBLIC_URL }}
+          GATEWAY_TOKEN: ${{ secrets.GATEWAY_TOKEN }}
+        run: |
+          set -euo pipefail
+          BUILD_SECRETS="$(printf 'GATEWAY_PUBLIC_URL=%s\nGATEWAY_TOKEN=%s\n' "$GATEWAY_PUBLIC_URL" "$GATEWAY_TOKEN")"
+          gh workflow run nextjs-pat-dispatch.yml --repo ferhatozcelik/devops --ref main \
+            -f caller_repo="${{ github.repository }}" \
+            -f source_ref="${{ github.sha }}" \
+            -f app_name="pairspan" \
+            -f node-version="22" \
+            -f docker_compose_name="docker-compose.yml" \
+            -f working_directory="web" \
+            -f artifact_token="$ARTIFACT_TOKEN" \
+            -f node_env="$NODE_ENV" \
+            -f build_secrets="$BUILD_SECRETS"
+          sleep 8
+          RUN_ID="$(gh run list --repo ferhatozcelik/devops --workflow nextjs-pat-dispatch.yml --limit 5 --json databaseId,event --jq '[.[] | select(.event=="workflow_dispatch")][0].databaseId')"
+          if [ -z "$RUN_ID" ]; then
+            echo "Failed to find devops deploy run"
+            exit 1
+          fi
+          gh run watch "$RUN_ID" --repo ferhatozcelik/devops --exit-status

@@ -1,0 +1,103 @@
+{
+  "name": "pairspan-mac",
+  "productName": "Pairspan",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Wireless ADB bridge between a Mac and an Android phone.",
+  "author": "Ferhat Özçelik",
+  "main": "dist-electron/main.js",
+  "scripts": {
+    "dev": "concurrently -k \"vite --host 127.0.0.1\" \"tsc -p tsconfig.electron.json --watch\" \"wait-on http://127.0.0.1:5173 dist-electron/main.js && cross-env PAIRSPAN_DEV_URL=http://127.0.0.1:5173 electron .\"",
+    "build": "node -e \"require('node:fs').rmSync('dist-electron',{recursive:true,force:true})\" && tsc -p tsconfig.electron.json && tsc -p tsconfig.json && vite build",
+    "dist": "node scripts/fetch-mac-adb.mjs && npm run build && mkdir -p pack && sips -z 1024 1024 assets/icon.png --out pack/icon.png && electron-builder --mac dmg --universal",
+    "dist:win": "node scripts/fetch-win-adb.mjs && npm run build && mkdir -p pack && sips -z 1024 1024 assets/icon.png --out pack/icon.png && electron-builder --win nsis --x64",
+    "start": "electron .",
+    "install:debug": "bash scripts/install-debug.sh",
+    "dist:signed": "node scripts/fetch-mac-adb.mjs && npm run build && mkdir -p pack && sips -z 1024 1024 assets/icon.png --out pack/icon.png && electron-builder --mac dmg --universal -c.mac.identity=\"$CSC_NAME\" -c.mac.notarize=true"
+  },
+  "dependencies": {
+    "dotenv": "^16.6.1",
+    "qrcode": "^1.5.4",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.16.0",
+    "@types/qrcode": "^1.5.6",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@vitejs/plugin-react": "^4.7.0",
+    "concurrently": "^9.2.0",
+    "cross-env": "^7.0.3",
+    "electron": "^37.2.0",
+    "electron-builder": "^26.15.3",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5",
+    "wait-on": "^8.0.3"
+  },
+  "allowScripts": {
+    "electron@37.10.3": true,
+    "esbuild@0.25.12": true
+  },
+  "build": {
+    "appId": "com.pairspan.desktop",
+    "productName": "Pairspan",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "assets/**/*",
+      "package.json",
+      ".env.example",
+      "!**/.env.local"
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "icon": "pack/icon.png",
+      "identity": "-",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "universal"
+          ]
+        }
+      ],
+      "artifactName": "pairspan-mac-${version}.${ext}",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "extraResources": [
+        {
+          "from": "vendor/mac/adb",
+          "to": "adb"
+        }
+      ]
+    },
+    "win": {
+      "icon": "pack/icon.png",
+      "extraResources": [
+        {
+          "from": "vendor/win/adb",
+          "to": "adb"
+        }
+      ],
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "pairspan-windows-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false
+    }
+  }
+}
