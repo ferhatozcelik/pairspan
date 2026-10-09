@@ -34,6 +34,12 @@
   <a href="README.ja.md">日本語</a>
 </p>
 
+<p align="center">
+  <strong>Projekt unterstützen</strong><br>
+  <a href="https://buymeacoffee.com/ferhatozcelik">Buy Me a Coffee</a> ·
+  <a href="https://thanks.dev/donations">thanks.dev</a>
+</p>
+
 <br>
 
 <table align="center">
