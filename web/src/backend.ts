@@ -9,6 +9,8 @@ export interface SessionRecord {
   macConn?: string;
   /** Connected phones by device id. */
   phoneConns: Record<string, string>;
+  /** Keeps a disconnected session available briefly while both clients reconnect. */
+  emptySince?: number;
 }
 
 /** `mac` or `phone:<deviceId>`. */
@@ -82,5 +84,11 @@ class MemoryBackend implements Backend {
   async sweep() {
     const now = Date.now();
     for (const [ip, attempt] of this.attempts) if (now > attempt.resetsAt) this.attempts.delete(ip);
+    for (const [id, record] of this.sessions) {
+      if (record.emptySince && now - record.emptySince > 10 * 60_000) {
+        this.sessions.delete(id);
+        if (this.codes.get(record.pairCode) === id) this.codes.delete(record.pairCode);
+      }
+    }
   }
 }

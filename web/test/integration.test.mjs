@@ -57,6 +57,9 @@ test('token pairing, secret, QR payload and ADB relay', async () => {
     const welcome = await welcomePromise;
     assert.match(welcome.pairCode, /^[2-9A-HJKMNP-Z]{4}(-[2-9A-HJKMNP-Z]{4}){4}$/);
     assert.equal(welcome.qrPayload, `pairspan://pair?code=${welcome.pairCode.replaceAll('-', '')}&g=${encodeURIComponent('wss://example.test')}`);
+    const heartbeatAck = next(mac, msg => msg.type === 'heartbeat_ack');
+    mac.send(JSON.stringify({ type: 'event', event: 'mac_online', payload: {} }));
+    await heartbeatAck;
 
     const phone = await connect(url); sockets.push(phone);
     const phoneWelcome = next(phone, msg => msg.type === 'welcome');
@@ -138,6 +141,55 @@ test('several phones share one desktop and are told apart by device id', async (
     assert.equal((await bye).deviceId, deviceA);
   } finally {
     for (const ws of sockets) ws.close();
+    child.kill();
+  }
+});
+
+test('a disconnected desktop and phone can resume the same session', async () => {
+  const port = await freePort();
+  const child = spawn(process.execPath, ['--import', 'tsx', 'src/server.ts'], {
+    cwd: new URL('..', import.meta.url).pathname,
+    env: { ...process.env, PORT: String(port), GATEWAY_TOKEN: '', GATEWAY_SECRET: '' },
+    stdio: 'ignore'
+  });
+  const sockets = [];
+  try {
+    for (let i = 0; i < 60; i++) {
+      try { if ((await (await fetch(`http://127.0.0.1:${port}/health`)).json()).ok) break; }
+      catch { await new Promise(resolve => setTimeout(resolve, 100)); }
+    }
+    const url = `ws://127.0.0.1:${port}/ws`;
+    const clientId = 'c'.repeat(32), deviceId = 'd'.repeat(32);
+    const mac = await connect(url); sockets.push(mac);
+    const macWelcome = next(mac, msg => msg.type === 'welcome');
+    mac.send(JSON.stringify({ type: 'hello', role: 'mac', clientId }));
+    const original = await macWelcome;
+    const phone = await connect(url); sockets.push(phone);
+    const phoneWelcome = next(phone, msg => msg.type === 'welcome');
+    phone.send(JSON.stringify({ type: 'hello', role: 'phone', deviceId, pairCode: original.pairCode }));
+    await phoneWelcome;
+    await new Promise(resolve => { mac.close(); mac.once('close', resolve); });
+    await new Promise(resolve => { phone.close(); phone.once('close', resolve); });
+
+    const earlyPhone = await connect(url); sockets.push(earlyPhone);
+    const retry = next(earlyPhone, msg => msg.type === 'error');
+    earlyPhone.send(JSON.stringify({ type: 'hello', role: 'phone', deviceId, sessionId: original.sessionId }));
+    assert.equal((await retry).retry, true);
+
+    const resumedMac = await connect(url); sockets.push(resumedMac);
+    const resumedWelcome = next(resumedMac, msg => msg.type === 'welcome');
+    resumedMac.send(JSON.stringify({ type: 'hello', role: 'mac', clientId, sessionId: original.sessionId }));
+    assert.equal((await resumedWelcome).sessionId, original.sessionId);
+
+    const resumedPhone = await connect(url); sockets.push(resumedPhone);
+    const joined = next(resumedPhone, msg => msg.type === 'welcome');
+    resumedPhone.send(JSON.stringify({ type: 'hello', role: 'phone', deviceId, sessionId: original.sessionId }));
+    assert.equal((await joined).sessionId, original.sessionId);
+    const relayed = next(resumedMac, msg => msg.type === 'event' && msg.event === 'phone_heartbeat');
+    resumedPhone.send(JSON.stringify({ type: 'event', event: 'phone_heartbeat', payload: {} }));
+    assert.equal((await relayed).deviceId, deviceId);
+  } finally {
+    for (const ws of sockets) ws.terminate();
     child.kill();
   }
 });

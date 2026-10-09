@@ -35,6 +35,7 @@ const MAX_PHONES = 8;
 
 interface Sock extends WebSocket {
   client?: Client;
+  alive?: boolean;
   peerIp?: string;
   gatewayUrl?: string;
   queue?: Promise<void>;
@@ -160,9 +161,9 @@ async function detach(client: Client): Promise<void> {
     return;
   }
   if (!record.macConn && Object.keys(record.phoneConns).length === 0) {
-    await backend.deleteSession(record.id);
-    await backend.releaseCode(record.pairCode, record.id);
-    log('info', 'session_closed', { session: short(record.id) });
+    record.emptySince = Date.now();
+    await backend.putSession(record);
+    log('info', 'session_waiting_reconnect', { session: short(record.id) });
   } else {
     await backend.putSession(record);
   }
@@ -185,11 +186,14 @@ async function rotatePairCode(record: SessionRecord): Promise<void> {
   });
 }
 
-async function createMacSession(ws: Sock, requestedClientId: unknown): Promise<void> {
-  const id = randomBytes(24).toString('hex');
-  const clientId = typeof requestedClientId === 'string' && CLIENT_ID.test(requestedClientId) ? requestedClientId : id.slice(0, 32);
+async function createMacSession(ws: Sock, requestedClientId: unknown, requestedSessionId: unknown): Promise<void> {
+  const resumeId = typeof requestedSessionId === 'string' && /^[0-9a-f]{48}$/.test(requestedSessionId) ? requestedSessionId : '';
+  const previous = resumeId ? await backend.getSession(resumeId) : null;
+  const resumed = previous && previous.clientId === requestedClientId ? previous : null;
+  const id = resumed?.id ?? randomBytes(24).toString('hex');
+  const clientId = resumed?.clientId ?? (typeof requestedClientId === 'string' && CLIENT_ID.test(requestedClientId) ? requestedClientId : id.slice(0, 32));
   const connId = randomUUID();
-  const record: SessionRecord = {
+  const record: SessionRecord = resumed ? { ...resumed, macConn: connId, emptySince: undefined, gatewayUrl: ws.gatewayUrl || resumed.gatewayUrl } : {
     id,
     pairCode: await newPairCode(id),
     pairExpiresAt: Date.now() + PAIR_TTL_MS,
@@ -198,11 +202,14 @@ async function createMacSession(ws: Sock, requestedClientId: unknown): Promise<v
     macConn: connId,
     phoneConns: {},
   };
+  const oldMac = local.get(slot(id, 'mac'));
+  if (oldMac) oldMac.ws.close(4000, 'replaced');
   await backend.putSession(record);
-  stats.sessions++;
-  log('info', 'session_opened', { session: short(id), client: short(clientId), peer: ws.peerIp });
+  if (!resumed) stats.sessions++;
+  log('info', resumed ? 'session_resumed' : 'session_opened', { session: short(id), client: short(clientId), peer: ws.peerIp });
   const client: Client = { ws, kind: 'mac', role: 'mac', sessionId: id, connId };
   ws.client = client;
+  if (oldMac) local.delete(slot(id, 'mac'));
   await attachLocal(client);
   send(ws, {
     type: 'welcome',
@@ -213,6 +220,7 @@ async function createMacSession(ws: Sock, requestedClientId: unknown): Promise<v
     qrPayload: qrPayload(record.gatewayUrl, record.pairCode),
     expiresAt: record.pairExpiresAt,
   });
+  if (resumed) await broadcastPhones(record, { type: 'event', event: 'mac_online', payload: { clientId } });
 }
 
 async function attachPhone(ws: Sock, record: SessionRecord, rotate: boolean, deviceId: string): Promise<void> {
@@ -230,6 +238,7 @@ async function attachPhone(ws: Sock, record: SessionRecord, rotate: boolean, dev
   else if (known) await backend.publish(record.id, role, JSON.stringify({ t: 'close', except: client.connId }));
   const before = record.phoneConns[deviceId];
   record.phoneConns[deviceId] = client.connId;
+  record.emptySince = undefined;
   await backend.putSession(record);
   ws.client = client;
   if (previous) local.delete(slot(record.id, role));
@@ -257,6 +266,11 @@ async function joinPhone(ws: Sock, pairCodeRaw: string, resumeSessionId: string 
     const existing = await backend.getSession(resumeSessionId);
     if (existing?.macConn) {
       await attachPhone(ws, existing, false, deviceId);
+      return;
+    }
+    if (existing) {
+      send(ws, { type: 'error', code: 'mac_offline', retry: true, message: 'Computer is reconnecting.' });
+      ws.close(4010, 'computer reconnecting');
       return;
     }
   }
@@ -302,7 +316,7 @@ async function handleMessage(ws: Sock, raw: string): Promise<void> {
     const role = message.role === 'phone' ? 'phone' : message.role === 'mac' ? 'mac' : null;
     if (!role) { send(ws, { type: 'error', code: 'bad_request', message: 'role is required.' }); return; }
     if (ws.client) return;
-    if (role === 'mac') await createMacSession(ws, message.clientId);
+    if (role === 'mac') await createMacSession(ws, message.clientId, message.sessionId);
     else await joinPhone(ws, String(message.pairCode || ''), typeof message.sessionId === 'string' ? message.sessionId : undefined, message.deviceId);
     return;
   }
@@ -321,6 +335,7 @@ async function handleMessage(ws: Sock, raw: string): Promise<void> {
     const event = typeof message.event === 'string' ? message.event : '';
     if (!event || event.length > 64) return;
     const payload = message.payload && typeof message.payload === 'object' ? message.payload as Record<string, unknown> : {};
+    if (event === 'mac_online' && client.kind === 'mac') send(ws, { type: 'heartbeat_ack' });
 
     if (event === 'shell_request') {
       if (client.kind !== 'mac') return;
@@ -456,6 +471,8 @@ server.on('upgrade', (req, socket, head) => {
 
 wss.on('connection', (socket, req) => {
   const ws = socket as Sock;
+  ws.alive = true;
+  ws.on('pong', () => { ws.alive = true; });
   ws.peerIp = peerAddress(req);
   stats.connections++;
   log('debug', 'socket_open', { peer: ws.peerIp });
@@ -475,6 +492,16 @@ wss.on('connection', (socket, req) => {
   ws.on('close', closed);
   ws.on('error', closed);
 });
+
+// Keep idle connections alive through reverse proxies and discard half-open sockets.
+setInterval(() => {
+  for (const ws of wss.clients as Set<Sock>) {
+    if (ws.readyState !== WebSocket.OPEN) continue;
+    if (ws.alive === false) { ws.terminate(); continue; }
+    ws.alive = false;
+    ws.ping();
+  }
+}, 20_000).unref();
 
 setInterval(async () => {
   await backend.sweep();

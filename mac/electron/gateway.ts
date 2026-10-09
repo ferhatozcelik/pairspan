@@ -45,6 +45,7 @@ interface PhoneEntry {
   lastMs: number;
   adbConnectPending: boolean;
   lastAdbConnectMs: number;
+  lastAdbCheckMs: number;
   adbGeneration: number;
   /** `<ip>:5555` once the phone answers directly on the local network; the cloud tunnel is stopped then. */
   direct?: string;
@@ -63,6 +64,8 @@ const LEGACY_DEVICE_ID = '0'.repeat(32);
 let settings = { url: DEFAULT_GATEWAY_URL, token: '' };
 const phones = new Map<string, PhoneEntry>();
 let socket: WebSocket | undefined;
+let sessionId = '';
+let lastServerMessageMs = 0;
 let heartbeat: NodeJS.Timeout | undefined;
 let rotation: NodeJS.Timeout | undefined;
 let reconnectTimer: NodeJS.Timeout | undefined;
@@ -74,23 +77,33 @@ function resetAdbConnect(entry: PhoneEntry): void {
   entry.adbGeneration++;
   entry.adbConnectPending = false;
   entry.lastAdbConnectMs = 0;
+  entry.lastAdbCheckMs = 0;
 }
 
 function connectLocalAdb(entry: PhoneEntry): void {
   const port = entry.proxy.getPort();
   const target = entry.direct ?? (port > 0 ? `127.0.0.1:${port}` : '');
-  if (!target || entry.adbConnectPending || Date.now() - entry.lastAdbConnectMs < 30000) return;
+  if (!target || entry.adbConnectPending || Date.now() - entry.lastAdbCheckMs < 30000) return;
   entry.adbConnectPending = true;
-  entry.lastAdbConnectMs = Date.now();
+  entry.lastAdbCheckMs = Date.now();
   const generation = entry.adbGeneration;
   const adb = adbLaunch();
-  execFile(adb.file, ['connect', target], { timeout: 15000, maxBuffer: 4096, cwd: adb.cwd, windowsHide: true }, (error, stdout, stderr) => {
+  execFile(adb.file, ['devices'], { timeout: 15000, maxBuffer: 4096, cwd: adb.cwd, windowsHide: true }, (listError, devices) => {
     if (generation !== entry.adbGeneration) return;
-    entry.adbConnectPending = false;
-    const result = `${stdout}\n${stderr}`.trim();
-    if (error || !/\b(?:already )?connected to\b/i.test(result)) {
-      console.warn(`PAIRSPAN_ADB_CONNECT_FAILED=${result || String(error)}`);
-    } else console.log(`PAIRSPAN_ADB_CONNECTED=${target}`);
+    if (!listError && devices.split(/\r?\n/).some(line => line.trim() === `${target}\tdevice`)) {
+      entry.adbConnectPending = false;
+      return;
+    }
+    if (Date.now() - entry.lastAdbConnectMs < 30000) { entry.adbConnectPending = false; return; }
+    entry.lastAdbConnectMs = Date.now();
+    execFile(adb.file, ['connect', target], { timeout: 15000, maxBuffer: 4096, cwd: adb.cwd, windowsHide: true }, (error, stdout, stderr) => {
+      if (generation !== entry.adbGeneration) return;
+      entry.adbConnectPending = false;
+      const result = `${stdout}\n${stderr}`.trim();
+      if (error || !/\b(?:already )?connected to\b/i.test(result)) {
+        console.warn(`PAIRSPAN_ADB_CONNECT_FAILED=${result || String(error)}`);
+      } else console.log(`PAIRSPAN_ADB_CONNECTED=${target}`);
+    });
   });
 }
 
@@ -179,6 +192,7 @@ export function setClientId(clientId: string): void { publish({ clientId }); }
 export function setSettings(next: { url: string; token: string }): void {
   const url = normalizeBaseUrl(next.url);
   settings = { url, token: next.token };
+  sessionId = '';
   if (reconnectTimer) clearTimeout(reconnectTimer);
   reconnectTimer = undefined;
   socket?.close();
@@ -240,7 +254,7 @@ function acceptPhone(deviceId: string, payload: Record<string, unknown>): void {
   if (!entry) {
     entry = {
       state: { deviceId, connected: true, name: 'Android', model: '', sdk: null, lastSeenAt: null, adbReady: false, adbDetail: '', adbProxy: '' },
-      proxy: new AdbProxy(deviceId, send), lastMs: 0, adbConnectPending: false, lastAdbConnectMs: 0, adbGeneration: 0, probing: false, lastProbeMs: 0,
+      proxy: new AdbProxy(deviceId, send), lastMs: 0, adbConnectPending: false, lastAdbConnectMs: 0, lastAdbCheckMs: 0, adbGeneration: 0, probing: false, lastProbeMs: 0,
     };
     phones.set(deviceId, entry);
   }
@@ -288,6 +302,7 @@ function handleMessage(raw: string): void {
   const type = typeof message.type === 'string' ? message.type : '';
 
   if (type === 'welcome') {
+    if (typeof message.sessionId === 'string') sessionId = message.sessionId;
     const pairCode = typeof message.pairCode === 'string' ? message.pairCode : state.pairCode;
     const qrPayload = pairCode ? pairingPayload(pairCode) : '';
     publish({ status: 'online', error: null, pairCode, qrPayload });
@@ -362,14 +377,19 @@ function connect(): void {
   publish({ status: 'connecting', error: null });
   try {
     socket = new WebSocket(url);
+    lastServerMessageMs = Date.now();
   } catch (error) {
     publish({ status: 'offline', error: String(error) });
     scheduleReconnect();
     return;
   }
   const current = socket;
-  current.addEventListener('open', () => { if (socket === current) send({ type: 'hello', role: 'mac', clientId: state.clientId, token: settings.token }); });
-  current.addEventListener('message', event => { if (socket === current) handleMessage(String(event.data)); });
+  current.addEventListener('open', () => { if (socket === current) send({ type: 'hello', role: 'mac', clientId: state.clientId, sessionId, token: settings.token }); });
+  current.addEventListener('message', event => {
+    if (socket !== current) return;
+    lastServerMessageMs = Date.now();
+    handleMessage(String(event.data));
+  });
   current.addEventListener('close', () => {
     if (socket !== current) return;
     socket = undefined;
@@ -413,6 +433,15 @@ export function start(): void {
   connect();
   rotation = setInterval(() => send({ type: 'rotate_pair' }), 5 * 60 * 1000);
   heartbeat = setInterval(() => {
+    if (socket && Date.now() - lastServerMessageMs > 45000) {
+      const stale = socket;
+      socket = undefined;
+      try { stale.close(); } catch { /* ignore */ }
+      dropAllPhones();
+      publish({ status: 'offline', error: 'err.closed', phones: [], pairCode: '', qrPayload: '' });
+      scheduleReconnect();
+      return;
+    }
     let changed = false;
     for (const [id, entry] of phones) {
       if (entry.lastMs && Date.now() - entry.lastMs > 30000) { dropPhone(id); changed = true; }
@@ -424,6 +453,7 @@ export function start(): void {
 
 export function stop(): void {
   stopped = true;
+  sessionId = '';
   if (heartbeat) clearInterval(heartbeat);
   if (rotation) clearInterval(rotation);
   if (reconnectTimer) clearTimeout(reconnectTimer);
