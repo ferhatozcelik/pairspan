@@ -232,3 +232,11 @@ adb -s 127.0.0.1:44755 shell id
 ## 许可证
 
 [MIT](LICENSE)
+
+## 安全与负责任的使用
+
+仅在您拥有或已获得明确访问许可的设备上使用 Pairspan，用于合法的开发、调试和设备管理。请勿使用 ADB 进行未经授权的访问、隐蔽监控、数据窃取、传播恶意软件或绕过安全措施。
+
+在上述 USB 设置过程中，设备所有者必须启用 USB 调试、解锁手机并确认 Android 的调试授权提示。仅授权可信任的电脑。配对和自动重新连接必须遵守此授权，不得绕过已撤销的权限。请参阅 [Android ADB 文档](https://developer.android.com/tools/adb)。
+
+妥善保管配对令牌和 ADB 密钥。要终止访问，请移除 Pairspan 连接，并在 Android 开发者选项中撤销 USB 调试授权；不再需要调试时，请将其关闭。遵守 Android 的安全与权限模型，以及适用的 [Google Play 设备和网络滥用政策](https://support.google.com/googleplay/android-developer/answer/16559646)。仅获得 USB 授权并不代表符合 Google Play 政策。

@@ -232,3 +232,11 @@ Para desconectar un teléfono, pulsa **Remove connection** en Android. Para desc
 ## Licencia
 
 [MIT](LICENSE)
+
+## Seguridad y uso responsable
+
+Usa Pairspan solo con dispositivos propios o para los que tengas permiso explícito, con fines legítimos de desarrollo, depuración y administración. No uses ADB para acceso no autorizado, vigilancia oculta, robo de datos, malware ni para eludir controles de seguridad.
+
+En la configuración USB descrita arriba, el propietario debe activar la depuración USB, desbloquear el teléfono y aceptar la autorización de depuración de Android. Autoriza solo ordenadores de confianza. El emparejamiento y la reconexión automática deben respetar esa autorización y no eludir permisos revocados. Consulta la [documentación de ADB de Android](https://developer.android.com/tools/adb).
+
+Mantén privados los tokens de emparejamiento y las claves ADB. Para finalizar el acceso, elimina la conexión de Pairspan y revoca las autorizaciones de depuración USB en las opciones de desarrollador de Android; desactiva la depuración cuando ya no la necesites. Respeta el modelo de seguridad y permisos de Android y la [política de Google Play sobre abuso de dispositivos y redes](https://support.google.com/googleplay/android-developer/answer/16559646) aplicable. La autorización USB por sí sola no demuestra el cumplimiento de las políticas de Google Play.

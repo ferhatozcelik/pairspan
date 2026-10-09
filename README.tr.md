@@ -232,3 +232,11 @@ Tek telefonu ayırmak için Android uygulamasında **Remove connection** düğme
 ## Lisans
 
 [MIT](LICENSE)
+
+## Güvenlik ve sorumlu kullanım
+
+Pairspan’i yalnızca size ait veya erişim için açık izin aldığınız cihazlarda; meşru geliştirme, hata ayıklama ve cihaz yönetimi amacıyla kullanın. ADB’yi izinsiz erişim, gizli izleme, veri hırsızlığı, zararlı yazılım veya güvenlik önlemlerini aşmak için kullanmayın.
+
+Yukarıdaki USB kurulumunda cihaz sahibi USB hata ayıklamayı açmalı, telefonun kilidini açmalı ve Android’in hata ayıklama yetkilendirme isteğini onaylamalıdır. Yalnızca güvendiğiniz bilgisayarlara izin verin. Eşleştirme ve otomatik yeniden bağlanma bu yetkilendirmeye bağlı olmalı; iptal edilen izinleri aşmamalıdır. Bkz. [Android ADB belgeleri](https://developer.android.com/tools/adb).
+
+Eşleştirme belirteçlerini ve ADB anahtarlarını gizli tutun. Erişimi sonlandırmak için Pairspan bağlantısını kaldırın ve Android’in Geliştirici seçeneklerinden USB hata ayıklama yetkilerini iptal edin; ihtiyaç kalmadığında hata ayıklamayı kapatın. Android’in güvenlik ve izin modeline ve geçerli [Google Play Cihaz ve Ağ Kötüye Kullanımı politikasına](https://support.google.com/googleplay/android-developer/answer/16559646) uyun. USB üzerinden izin verilmesi tek başına Google Play politikalarına uygunluk anlamına gelmez.

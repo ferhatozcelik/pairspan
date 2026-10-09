@@ -227,3 +227,11 @@ To disconnect a phone, tap **Remove connection** in the Android app. To disconne
 ## License
 
 [MIT](LICENSE)
+
+## Security and responsible use
+
+Use Pairspan only with devices you own or have explicit permission to access, for legitimate development, debugging and device management. Do not use ADB for unauthorized access, covert monitoring, data theft, malware or bypassing security controls.
+
+In the USB setup described above, the device owner must enable USB debugging, unlock the phone and approve Android’s debugging authorization prompt. Only approve computers you trust. Pairing or automatic reconnection must respect this authorization and must not override revoked permissions. See [Android’s ADB documentation](https://developer.android.com/tools/adb).
+
+Keep pairing tokens and ADB keys private. To end access, remove the Pairspan connection and revoke USB debugging authorizations in Android’s Developer options; disable debugging when no longer needed. Follow Android’s security and permission model and the applicable [Google Play Device and Network Abuse policy](https://support.google.com/googleplay/android-developer/answer/16559646). USB authorization alone does not establish Google Play policy compliance.

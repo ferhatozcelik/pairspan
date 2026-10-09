@@ -232,3 +232,11 @@ Tippe zum Trennen eines Smartphones in der Android-App auf **Remove connection**
 ## Lizenz
 
 [MIT](LICENSE)
+
+## Sicherheit und verantwortungsvolle Nutzung
+
+Verwende Pairspan nur auf eigenen Geräten oder mit ausdrücklicher Zugriffsberechtigung, für legitime Entwicklung, Fehlersuche und Geräteverwaltung. Nutze ADB nicht für unbefugten Zugriff, heimliche Überwachung, Datendiebstahl, Schadsoftware oder zum Umgehen von Sicherheitsmaßnahmen.
+
+Bei der oben beschriebenen USB-Einrichtung muss der Geräteinhaber USB-Debugging aktivieren, das Smartphone entsperren und die Android-Autorisierung bestätigen. Erlaube nur vertrauenswürdige Computer. Kopplung und automatische Wiederverbindung müssen diese Autorisierung beachten und dürfen widerrufene Berechtigungen nicht umgehen. Siehe die [Android-ADB-Dokumentation](https://developer.android.com/tools/adb).
+
+Halte Kopplungstoken und ADB-Schlüssel geheim. Entferne zum Beenden des Zugriffs die Pairspan-Verbindung und widerrufe die USB-Debugging-Autorisierungen in den Android-Entwickleroptionen. Deaktiviere Debugging, wenn es nicht mehr benötigt wird. Beachte das Android-Sicherheits- und Berechtigungsmodell sowie die geltende [Google-Play-Richtlinie zum Missbrauch von Geräten und Netzwerken](https://support.google.com/googleplay/android-developer/answer/16559646). Eine USB-Autorisierung allein belegt keine Einhaltung der Google-Play-Richtlinien.
