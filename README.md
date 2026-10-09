@@ -1,12 +1,53 @@
-# Pairspan
+<p align="center">
+  <a href="https://pairspan.ferhatozcelik.com">
+    <img src="web/assets/pairspan-icon.png" alt="Pairspan logo" width="100">
+  </a>
+</p>
 
-Pair a Mac with an Android phone over wireless ADB.
+<h1 align="center">Pairspan</h1>
 
-**Pair once. Connect wirelessly. Deploy effortlessly.**
+<p align="center">Connect your Android phone to macOS or Windows over wireless ADB.</p>
 
-[https://pairspan.ferhatozcelik.com](https://pairspan.ferhatozcelik.com)
+<p align="center"><strong>Pair once. Connect wirelessly. Deploy effortlessly.</strong></p>
 
-The desktop app and the Android app connect to that address.
+<p align="center">
+  <a href="https://github.com/ferhatozcelik/pairspan/releases/tag/v1.0.0"><img src="https://img.shields.io/badge/release-v1.0.0-39795c" alt="Release v1.0.0"></a>
+  <img src="https://img.shields.io/badge/platforms-macOS%20%7C%20Windows%20%7C%20Android-39795c" alt="Platforms: macOS, Windows and Android">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-39795c" alt="MIT license"></a>
+</p>
+
+<p align="center">
+  <a href="https://pairspan.ferhatozcelik.com">Website</a> ·
+  <a href="https://github.com/ferhatozcelik/pairspan/releases/tag/v1.0.0">Download</a> ·
+  <a href="#setup-guide">Setup guide</a> ·
+  <a href="CONTRIBUTING.md">Contributing</a>
+</p>
+
+<p align="center">
+  <a href="README.md">English</a> ·
+  <a href="README.tr.md">Türkçe</a> ·
+  <a href="README.de.md">Deutsch</a> ·
+  <a href="README.es.md">Español</a> ·
+  <a href="README.fr.md">Français</a> ·
+  <a href="README.pt-BR.md">Português (Brasil)</a> ·
+  <a href="README.zh-CN.md">简体中文</a> ·
+  <a href="README.ja.md">日本語</a>
+</p>
+
+<br>
+
+<table align="center">
+  <tr>
+    <th align="center">Android · Connected</th>
+    <th align="center">Android · Pairing</th>
+    <th align="center">macOS · QR code &amp; token</th>
+  </tr>
+  <tr>
+    <td align="center" valign="top"><img src="docs/screenshots/android-connected.png" alt="Pairspan Android app connected to a computer" width="200"></td>
+    <td align="center" valign="top"><img src="docs/screenshots/android-pairing.png" alt="Pairspan Android app with pairing token entry and QR code scanning" width="200"></td>
+    <td align="center" valign="top"><img src="docs/screenshots/macos-pairing.png" alt="Pairspan macOS app displaying a pairing token and QR code" width="300"></td>
+  </tr>
+</table>
 
 ## Download
 
@@ -81,7 +122,7 @@ Notes:
 1. Make sure the desktop app is enabled and shows **Connected to the Pairspan service**.
 2. In the Android app tap **Scan QR code** and scan the code from the desktop, or type the pairing token.
 3. The phone appears under **Connected devices** on the desktop with its **Device ID** and the desktop's **Client ID**. The same two ids are in the Android app under **Settings**.
-4. To add another phone, repeat step 4 with the new code (a used code is replaced right away).
+4. To add another phone, repeat this pairing step with the new code (a used code is replaced right away).
 
 ### 5. Self-host
 
