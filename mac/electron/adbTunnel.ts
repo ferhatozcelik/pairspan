@@ -21,6 +21,7 @@ export class AdbProxy {
   constructor(private readonly deviceId: string, private send: Send) {}
 
   getPort(): number { return this.listeningPort; }
+  hasConnection(): boolean { return !!this.localSocket && !this.localSocket.destroyed; }
   getConnectHint(): string { return this.listeningPort > 0 ? `adb connect 127.0.0.1:${this.listeningPort}` : ''; }
 
   private emit(event: string, payload: object): void {
@@ -65,15 +66,15 @@ export class AdbProxy {
   }
 
   private accept(socket: Socket): void {
-    try { this.localSocket?.destroy(); } catch { /* ignore */ }
+    // A probe or duplicate adb connect must never replace the active transport.
+    if (this.hasConnection()) { socket.destroy(); return; }
     this.localSocket = socket;
     this.tunnelId = randomUUID();
     this.tunnelReady = false;
     this.pending = [];
     socket.setNoDelay(true);
-    this.emit('adb_tunnel_open', { id: this.tunnelId });
     socket.on('data', chunk => {
-      if (!this.tunnelId) return;
+      if (this.localSocket !== socket || !this.tunnelId) return;
       const buf = Buffer.from(chunk);
       if (!this.tunnelReady) { this.pending.push(buf); return; }
       this.emit('adb_tunnel_data', { id: this.tunnelId, data: buf.toString('base64') });
@@ -88,6 +89,7 @@ export class AdbProxy {
       if (id) this.emit('adb_tunnel_close', { id });
     });
     socket.on('error', () => { try { socket.destroy(); } catch { /* ignore */ } });
+    this.emit('adb_tunnel_open', { id: this.tunnelId });
   }
 
   handleEvent(event: string, payload: Record<string, unknown>): void {

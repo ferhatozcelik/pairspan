@@ -12,6 +12,7 @@
     "dist": "node scripts/fetch-mac-adb.mjs && npm run build && mkdir -p pack && sips -z 1024 1024 assets/icon.png --out pack/icon.png && electron-builder --mac dmg --universal",
     "dist:win": "node scripts/fetch-win-adb.mjs && npm run build && mkdir -p pack && sips -z 1024 1024 assets/icon.png --out pack/icon.png && electron-builder --win nsis --x64",
     "start": "electron .",
+    "test": "tsc -p tsconfig.electron.json && node --test test/*.test.cjs",
     "install:debug": "bash scripts/install-debug.sh",
     "dist:signed": "node scripts/fetch-mac-adb.mjs && npm run build && mkdir -p pack && sips -z 1024 1024 assets/icon.png --out pack/icon.png && electron-builder --mac dmg --universal -c.mac.identity=\"$CSC_NAME\" -c.mac.notarize=true"
   },

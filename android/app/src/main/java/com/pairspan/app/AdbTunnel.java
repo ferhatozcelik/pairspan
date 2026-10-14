@@ -26,7 +26,7 @@ final class AdbTunnel {
         this.sender = sender;
     }
 
-    void open(String id) {
+    synchronized void open(String id) {
         if (id == null || id.isBlank()) return;
         close();
         tunnelId = id;
@@ -42,7 +42,7 @@ final class AdbTunnel {
                     try { next.close(); } catch (Exception ignored) { }
                     port = ShellBridge.discoverTlsPort();
                     if (port < 1) {
-                        sendClose("ADB port not found");
+                        sendClose(id, "ADB port not found");
                         return;
                     }
                     next = new Socket();
@@ -54,7 +54,10 @@ final class AdbTunnel {
                     try { next.close(); } catch (Exception ignored) { }
                     return;
                 }
-                socket = next;
+                synchronized (this) {
+                    if (!open.get() || !id.equals(tunnelId)) { next.close(); return; }
+                    socket = next;
+                }
                 sender.send("adb_tunnel_ready", new JSONObject().put("id", id).put("port", port));
                 InputStream input = next.getInputStream();
                 byte[] buffer = new byte[64 * 1024];
@@ -64,9 +67,10 @@ final class AdbTunnel {
                     sender.send("adb_tunnel_data", new JSONObject().put("id", id).put("data", data));
                 }
             } catch (Exception error) {
-                sendClose(error.getMessage() == null ? "tunnel open failed" : error.getMessage());
+                sendClose(id, error.getMessage() == null ? "tunnel open failed" : error.getMessage());
             } finally {
-                closeLocal();
+                sendClose(id, "ADB socket closed");
+                closeFromRemote(id);
             }
         });
     }
@@ -74,27 +78,32 @@ final class AdbTunnel {
     void write(String id, String base64) {
         if (!open.get() || id == null || !id.equals(tunnelId) || base64 == null || base64.isEmpty()) return;
         writeWorker.execute(() -> {
+            if (!open.get() || !id.equals(tunnelId)) return;
             try {
-                Socket current = socket;
+                Socket current;
+                synchronized (this) {
+                    if (!id.equals(tunnelId)) return;
+                    current = socket;
+                }
                 if (current == null || current.isClosed()) return;
                 byte[] bytes = Base64.decode(base64, Base64.DEFAULT);
                 OutputStream output = current.getOutputStream();
                 output.write(bytes);
                 output.flush();
             } catch (Exception error) {
-                sendClose(error.getMessage() == null ? "tunnel write failed" : error.getMessage());
-                close();
+                sendClose(id, error.getMessage() == null ? "tunnel write failed" : error.getMessage());
+                closeFromRemote(id);
             }
         });
     }
 
-    void close() {
+    synchronized void close() {
         open.set(false);
         closeLocal();
         tunnelId = "";
     }
 
-    void closeFromRemote(String id) {
+    synchronized void closeFromRemote(String id) {
         if (id != null && id.equals(tunnelId)) close();
     }
 
@@ -106,9 +115,10 @@ final class AdbTunnel {
         }
     }
 
-    private void sendClose(String reason) {
-        String id = tunnelId;
-        if (id.isEmpty()) return;
+    private synchronized void sendClose(String id, String reason) {
+        // Retired readers and queued writes must never close a replacement tunnel.
+        if (id.isEmpty() || !id.equals(tunnelId)) return;
+        close();
         try {
             sender.send("adb_tunnel_close", new JSONObject().put("id", id).put("reason", reason == null ? "" : reason));
         } catch (Exception ignored) { }

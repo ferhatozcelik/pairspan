@@ -56,7 +56,7 @@ GATEWAY_TOKEN=
 2. Shows the pairing token and QR from the gateway `welcome` message.
 3. Lists every connected phone with its device id and this app's client id. Up to 8 phones can be paired.
 4. When a phone sends `adb_tunnel_ready`, listens on a free port from `127.0.0.1:44755` upward and relays bytes for that phone.
-5. Runs `adb connect` for each port and retries after a drop.
+5. Runs `adb connect` for each port and retries after a drop. While a local ADB transport is open, periodic checks do not reconnect it; additional TCP connections are rejected without replacing the active stream.
 
 The switch in the header, or **Enabled** in the tray menu, turns the whole app on or off. The choice and the client id are kept in `settings.json` in the app's user data folder.
 
@@ -65,3 +65,5 @@ Check the link:
 ```bash
 adb -s 127.0.0.1:44755 shell id
 ```
+
+Run the ADB transport regression tests with `npm test`. These cover duplicate connections, stale callbacks after reconnect, and buffering until the phone is ready.

@@ -83,6 +83,8 @@ function resetAdbConnect(entry: PhoneEntry): void {
 function connectLocalAdb(entry: PhoneEntry): void {
   const port = entry.proxy.getPort();
   const target = entry.direct ?? (port > 0 ? `127.0.0.1:${port}` : '');
+  // The ADB server already owns this transport; periodic reconnects interrupt mirroring.
+  if (!entry.direct && entry.proxy.hasConnection()) return;
   if (!target || entry.adbConnectPending || Date.now() - entry.lastAdbCheckMs < 30000) return;
   entry.adbConnectPending = true;
   entry.lastAdbCheckMs = Date.now();
