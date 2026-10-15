@@ -241,3 +241,9 @@ Use Pairspan only with devices you own or have explicit permission to access, fo
 In the USB setup described above, the device owner must enable USB debugging, unlock the phone and approve Android’s debugging authorization prompt. Only approve computers you trust. Pairing or automatic reconnection must respect this authorization and must not override revoked permissions. See [Android’s ADB documentation](https://developer.android.com/tools/adb).
 
 Keep pairing tokens and ADB keys private. To end access, remove the Pairspan connection and revoke USB debugging authorizations in Android’s Developer options; disable debugging when no longer needed. Follow Android’s security and permission model and the applicable [Google Play Device and Network Abuse policy](https://support.google.com/googleplay/android-developer/answer/16559646). USB authorization alone does not establish Google Play policy compliance.
+
+## WebRTC screen streaming (V2)
+
+Native Android H.264 streaming and the Electron receiver are documented in
+[WebRTC V2 setup, diagnostics and test matrix](docs/webrtc-v2.md).
+Existing ADB commands and APK installation remain available.

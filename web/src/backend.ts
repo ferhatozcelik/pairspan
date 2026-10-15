@@ -7,6 +7,7 @@ export interface SessionRecord {
   /** Stable id of the desktop app instance, shown next to the phones it hosts. */
   clientId: string;
   macConn?: string;
+  members: Record<string, { token: string; expiresAt: number }>;
   /** Connected phones by device id. */
   phoneConns: Record<string, string>;
   /** Keeps a disconnected session available briefly while both clients reconnect. */
@@ -51,8 +52,8 @@ class MemoryBackend implements Backend {
 
   constructor(private onMessage: BusHandler) {}
 
-  async getSession(id: string) { const record = this.sessions.get(id); return record ? { ...record } : null; }
-  async putSession(record: SessionRecord) { this.sessions.set(record.id, { ...record }); }
+  async getSession(id: string) { const record = this.sessions.get(id); return record ? structuredClone(record) : null; }
+  async putSession(record: SessionRecord) { this.sessions.set(record.id, structuredClone(record)); }
   async deleteSession(id: string) { this.sessions.delete(id); }
   async claimCode(code: string, sessionId: string) {
     if (this.codes.has(code)) return false;
@@ -85,6 +86,7 @@ class MemoryBackend implements Backend {
     const now = Date.now();
     for (const [ip, attempt] of this.attempts) if (now > attempt.resetsAt) this.attempts.delete(ip);
     for (const [id, record] of this.sessions) {
+      for (const [role, member] of Object.entries(record.members)) if (member.expiresAt < now) delete record.members[role];
       if (record.emptySince && now - record.emptySince > 10 * 60_000) {
         this.sessions.delete(id);
         if (this.codes.get(record.pairCode) === id) this.codes.delete(record.pairCode);

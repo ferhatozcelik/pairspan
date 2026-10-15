@@ -477,7 +477,10 @@ class MainActivity : ComponentActivity() {
                     .setCaptureActivity(PairspanCaptureActivity::class.java).setOrientationLocked(false)
                     .setPrompt(scanPrompt))
             }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.scan_qr)) }
-        } else OutlinedButton(onClick = ::disconnect, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.remove_connection)) }
+        } else {
+            OutlinedButton(onClick = ::disconnect, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.remove_connection)) }
+            OutlinedButton(onClick = { startActivity(Intent(this@MainActivity, StreamConsentActivity::class.java)) }, modifier = Modifier.fillMaxWidth()) { Text("Allow requested screen sharing") }
+        }
     }
 
     private enum class StepState { Done, Running, Action, Optional }

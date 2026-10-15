@@ -12,3 +12,12 @@ and keeps its original license headers. Packages were renamed where noted.
 Resources `res/**/zxing_*` and `res/raw/zxing_beep.ogg` come from zxing-android-embedded 4.3.0 (Apache-2.0).
 
 Apache License 2.0: https://www.apache.org/licenses/LICENSE-2.0
+
+## Native WebRTC
+
+Android streaming uses `io.github.webrtc-sdk:android:144.7559.15`, the
+[webrtc-sdk Android distribution](https://github.com/webrtc-sdk/android) of
+[WebRTC](https://webrtc.googlesource.com/src/). WebRTC is BSD-3-Clause licensed
+with additional third-party licenses and patent terms included by the distribution.
+The dependency provides the native RTP/congestion-control stack and MediaCodec
+hardware encoder integration; no managed streaming service is used.

@@ -8,6 +8,8 @@ RUN npx tsc -p tsconfig.json
 
 FROM node:22-alpine AS runner
 WORKDIR /app
+ARG APP_REVISION=unknown
+ENV APP_REVISION=$APP_REVISION
 ENV NODE_ENV=production
 ENV PORT=3000
 COPY package.json package-lock.json ./

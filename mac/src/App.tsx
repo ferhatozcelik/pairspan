@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { ScreenStream } from './ScreenStream';
 import QRCode from 'qrcode';
 import icon from '../assets/icon.png';
 import type { GatewayState, UsbDevice } from './types';
@@ -11,6 +12,7 @@ const initial: GatewayState = {
 
 export default function App() {
   const [state, setState] = useState<GatewayState>(initial);
+  const [streamDevice, setStreamDevice] = useState<string | null>(null);
   const [notice, setNotice] = useState('');
   const [qr, setQr] = useState('');
   useEffect(() => {
@@ -54,6 +56,7 @@ export default function App() {
       </label>
     </header>
     <main>
+      {streamDevice && state.enabled && <ScreenStream deviceId={streamDevice} gateway={state} onClose={() => setStreamDevice(null)} />}
       <section className="card status"><span className={`dot ${gateway.cls}`}/><div><h2>{gateway.text}</h2><p>{!state.enabled ? t('gw.disabled.d') : state.status === 'online' ? t('gw.ok.d') : errorText(state.error) || t('gw.retry')}</p></div></section>
       {state.clientId && <section className="card ids"><span className="eyebrow">{t('client.id')}</span><button className="id" onClick={() => copy(state.clientId)}>{state.clientId}</button></section>}
       {state.enabled && <section className="card pairing"><span className="eyebrow">{t('pair.eyebrow')}</span><div className="code">{state.pairCode || '••••••'}</div>{qr && <div className="qr-frame"><img src={qr} alt={t('pair.qr')} /></div>}<p>{t('pair.hint')}</p><button className="text-button" disabled={!state.pairCode} onClick={() => void window.pairspan.copyPairCode().then(() => setNotice(t('pair.copied')))}>{t('pair.copy')}</button></section>}
@@ -64,6 +67,7 @@ export default function App() {
           <div className="device-head"><span className={`dot ${phone.adbReady ? 'online' : 'connecting'}`}/><strong>{phone.name || t('phone.on')}</strong>{phone.model && phone.model !== phone.name && <small>{phone.model}</small>}</div>
           <div className="kv"><span>{t('device.id')}</span><button className="id" onClick={() => copy(phone.deviceId)}>{phone.deviceId}</button></div>
           <div className="kv"><span>{t('client.id')}</span><button className="id" onClick={() => copy(state.clientId)}>{state.clientId}</button></div>
+          <button className="primary small" disabled={!phone.connected} onClick={() => setStreamDevice(phone.deviceId)}>View screen</button>
           <p>{phone.adbReady ? t('adb.ready') : phone.adbDetail || t('adb.waiting')}</p>
           {phone.adbProxy && <button className="text-button" onClick={() => void window.pairspan.copyAdbProxy(phone.deviceId).then(() => setNotice(t('copied')))}>{phone.adbProxy}</button>}
         </div>)}

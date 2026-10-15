@@ -80,6 +80,9 @@ final class GatewaySocket {
             return;
         }
 
+        String host = android.net.Uri.parse(url).getHost();
+        boolean local = host != null && (host.equals("localhost") || host.equals("::1") || host.equals("[::1]") || host.endsWith(".local") || (host.matches("[0-9]{1,3}(\\.[0-9]{1,3}){3}") && host.matches("(?:127|10|192\\.168|172\\.(?:1[6-9]|2[0-9]|3[01]))\\..*")));
+        if (url.startsWith("ws://") && !local) { listener.onState("error: Internet signaling requires WSS"); return; }
         Request request;
         try { request = new Request.Builder().url(url).build(); }
         catch (IllegalArgumentException e) {
@@ -91,7 +94,7 @@ final class GatewaySocket {
                 listener.onState("joining");
                 try {
                     JSONObject hello = new JSONObject().put("type", "hello").put("role", "phone").put("deviceId", deviceId(context)).put("token", BuildConfig.GATEWAY_TOKEN);
-                    if (!resumeSessionId.isEmpty()) hello.put("sessionId", resumeSessionId);
+                    if (!resumeSessionId.isEmpty()) hello.put("sessionId", resumeSessionId).put("resumeToken", context.getSharedPreferences("gateway", Context.MODE_PRIVATE).getString("resumeToken", ""));
                     if (!pairCode.isEmpty()) hello.put("pairCode", pairCode);
                     webSocket.send(hello.toString());
                 } catch (JSONException e) {
@@ -104,6 +107,7 @@ final class GatewaySocket {
                     JSONObject message = new JSONObject(text);
                     String type = message.optString("type");
                     if ("welcome".equals(type)) {
+                        context.getSharedPreferences("gateway", Context.MODE_PRIVATE).edit().putString("resumeToken", message.optString("resumeToken")).apply();
                         ready = true;
                         listener.onState("joined");
                         listener.onWelcome(message.optString("sessionId"), message.optString("clientId"));
@@ -135,6 +139,7 @@ final class GatewaySocket {
         if (!ready) return false;
         WebSocket current = socket;
         if (current == null) return false;
+        if (current.queueSize() > 2 * 1024 * 1024) { current.cancel(); return false; }
         try {
             JSONObject body = payload == null ? new JSONObject() : payload;
             // Gateways that predate device ids pass payloads through untouched, so every event names its phone itself.

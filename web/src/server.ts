@@ -6,6 +6,7 @@ import { type Duplex } from 'node:stream';
 import { TLSSocket } from 'node:tls';
 import { fileURLToPath } from 'node:url';
 import { WebSocketServer, WebSocket } from 'ws';
+import { validStreamEvent } from './streamProtocol.js';
 import { createBackend, type Backend, type SessionRecord } from './backend.js';
 
 const PORT = Number(process.env.PORT || 3000);
@@ -39,6 +40,10 @@ interface Sock extends WebSocket {
   peerIp?: string;
   gatewayUrl?: string;
   queue?: Promise<void>;
+  pending?: number;
+  pendingBytes?: number;
+  rate?: { at: number; count: number; bytes: number };
+  openedAt?: number;
 }
 
 interface Client {
@@ -59,6 +64,25 @@ const phoneRole = (deviceId: string): Role => `phone:${deviceId}`;
  */
 const backend: Backend = createBackend(onBusMessage);
 const local = new Map<string, Client>();
+// All membership mutations are serialized, including disconnect and expiry.
+let transactions = Promise.resolve();
+let pendingTotal = 0;
+function atomic(work: () => Promise<void>): Promise<void> {
+  const result = transactions.then(work);
+  transactions = result.catch(() => {});
+  return result;
+}
+const MEMBER_TTL = 10 * 60_000;
+function issueMember(record: SessionRecord, role: string): string {
+  const token = randomBytes(32).toString('hex');
+  record.members[role] = { token, expiresAt: Date.now() + MEMBER_TTL };
+  return token;
+}
+function validMember(record: SessionRecord, role: string, token: unknown): boolean {
+  const member = record.members[role];
+  return !!member && member.expiresAt > Date.now() && typeof token === 'string'
+    && /^[0-9a-f]{64}$/.test(token) && token.length === member.token.length && timingSafeEqual(Buffer.from(token), Buffer.from(member.token));
+}
 
 /** Pairing tokens are 20 characters from a 31 character alphabet without look-alikes (about 99 bits). */
 const TOKEN_ALPHABET = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
@@ -80,7 +104,7 @@ function qrPayload(gatewayUrl: string, code: string): string {
 }
 
 function publicScheme(req: IncomingMessage): 'ws' | 'wss' {
-  const value = headerValue(req.headers['x-forwarded-proto']);
+  const value = process.env.TRUST_PROXY === '1' ? headerValue(req.headers['x-forwarded-proto']) : '';
   if (value === 'https') return 'wss';
   if (value === 'http') return 'ws';
   return req.socket instanceof TLSSocket && req.socket.encrypted ? 'wss' : 'ws';
@@ -92,7 +116,7 @@ function headerValue(value: string | string[] | undefined): string {
 }
 
 function peerAddress(req: IncomingMessage): string {
-  return headerValue(req.headers['x-forwarded-for']) || req.socket.remoteAddress || 'unknown';
+  return (process.env.TRUST_PROXY === '1' ? headerValue(req.headers['x-forwarded-for']) : '') || req.socket.remoteAddress || 'unknown';
 }
 
 function authorized(value: unknown): boolean {
@@ -104,7 +128,10 @@ function authorized(value: unknown): boolean {
 }
 
 function send(ws: WebSocket, message: object): void {
-  if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(message));
+  if (ws.readyState !== WebSocket.OPEN) return;
+  const raw = JSON.stringify(message);
+  if (ws.bufferedAmount + Buffer.byteLength(raw) > 2 * 1024 * 1024) { ws.close(4008, 'backpressure'); return; }
+  ws.send(raw, error => { if (error) ws.terminate(); });
 }
 
 async function newPairCode(sessionId: string): Promise<string> {
@@ -186,10 +213,11 @@ async function rotatePairCode(record: SessionRecord): Promise<void> {
   });
 }
 
-async function createMacSession(ws: Sock, requestedClientId: unknown, requestedSessionId: unknown): Promise<void> {
+async function createMacSession(ws: Sock, requestedClientId: unknown, requestedSessionId: unknown, resumeToken: unknown): Promise<void> {
   const resumeId = typeof requestedSessionId === 'string' && /^[0-9a-f]{48}$/.test(requestedSessionId) ? requestedSessionId : '';
   const previous = resumeId ? await backend.getSession(resumeId) : null;
-  const resumed = previous && previous.clientId === requestedClientId ? previous : null;
+  const resumed = previous && previous.clientId === requestedClientId && validMember(previous, 'mac', resumeToken) ? previous : null;
+  if (previous && !resumed) { send(ws, { type: 'error', code: 'invalid_session', message: 'Session authentication failed.' }); ws.close(4003); return; }
   const id = resumed?.id ?? randomBytes(24).toString('hex');
   const clientId = resumed?.clientId ?? (typeof requestedClientId === 'string' && CLIENT_ID.test(requestedClientId) ? requestedClientId : id.slice(0, 32));
   const connId = randomUUID();
@@ -201,7 +229,9 @@ async function createMacSession(ws: Sock, requestedClientId: unknown, requestedS
     clientId,
     macConn: connId,
     phoneConns: {},
+    members: {},
   };
+  const resumeTokenNext = issueMember(record, 'mac');
   const oldMac = local.get(slot(id, 'mac'));
   if (oldMac) oldMac.ws.close(4000, 'replaced');
   await backend.putSession(record);
@@ -214,6 +244,7 @@ async function createMacSession(ws: Sock, requestedClientId: unknown, requestedS
   send(ws, {
     type: 'welcome',
     role: 'mac',
+    resumeToken: resumeTokenNext,
     sessionId: id,
     clientId,
     pairCode: displayCode(record.pairCode),
@@ -226,6 +257,8 @@ async function createMacSession(ws: Sock, requestedClientId: unknown, requestedS
 async function attachPhone(ws: Sock, record: SessionRecord, rotate: boolean, deviceId: string): Promise<void> {
   const role = phoneRole(deviceId);
   const known = deviceId in record.phoneConns;
+  for (const [memberRole, member] of Object.entries(record.members)) if (member.expiresAt < Date.now()) delete record.members[memberRole];
+  if (!record.members[role] && Object.keys(record.members).length >= MAX_PHONES + 1) { send(ws, { type: 'error', code: 'too_many_devices', message: 'Device membership limit reached. Wait for inactive memberships to expire.' }); ws.close(4009); return; }
   if (!known && Object.keys(record.phoneConns).length >= MAX_PHONES) {
     log('warn', 'too_many_devices', { session: short(record.id), device: short(deviceId) });
     send(ws, { type: 'error', code: 'too_many_devices', message: 'Too many phones are connected to this computer.' });
@@ -236,6 +269,7 @@ async function attachPhone(ws: Sock, record: SessionRecord, rotate: boolean, dev
   const previous = local.get(slot(record.id, role));
   if (previous) previous.ws.close(4000, 'replaced');
   else if (known) await backend.publish(record.id, role, JSON.stringify({ t: 'close', except: client.connId }));
+  const resumeTokenNext = issueMember(record, role);
   const before = record.phoneConns[deviceId];
   record.phoneConns[deviceId] = client.connId;
   record.emptySince = undefined;
@@ -256,14 +290,17 @@ async function attachPhone(ws: Sock, record: SessionRecord, rotate: boolean, dev
   if (rotate) await rotatePairCode(record);
   stats.pairings++;
   log('info', 'phone_joined', { session: short(record.id), device: short(deviceId), resumed: !rotate, phones: Object.keys(record.phoneConns).length, peer: ws.peerIp });
-  send(ws, { type: 'welcome', role: 'phone', sessionId: record.id, clientId: record.clientId, deviceId });
+  send(ws, { type: 'welcome', role: 'phone', resumeToken: resumeTokenNext, sessionId: record.id, clientId: record.clientId, deviceId });
 }
 
-async function joinPhone(ws: Sock, pairCodeRaw: string, resumeSessionId: string | undefined, requestedDeviceId: unknown): Promise<void> {
+async function joinPhone(ws: Sock, pairCodeRaw: string, resumeSessionId: string | undefined, requestedDeviceId: unknown, resumeToken: unknown): Promise<void> {
   // Phones that predate device ids get a fresh one per connection, so they still work one at a time.
   const deviceId = typeof requestedDeviceId === 'string' && DEVICE_ID.test(requestedDeviceId) ? requestedDeviceId : randomBytes(16).toString('hex');
   if (resumeSessionId && /^[0-9a-f]{48}$/.test(resumeSessionId)) {
     const existing = await backend.getSession(resumeSessionId);
+    if (existing && !validMember(existing, phoneRole(deviceId), resumeToken)) {
+      send(ws, { type: 'error', code: 'invalid_session', message: 'Session authentication failed. Pair again.' }); ws.close(4003); return;
+    }
     if (existing?.macConn) {
       await attachPhone(ws, existing, false, deviceId);
       return;
@@ -304,6 +341,7 @@ async function handleMessage(ws: Sock, raw: string): Promise<void> {
   try { message = JSON.parse(raw) as Record<string, unknown>; }
   catch { send(ws, { type: 'error', code: 'bad_request', message: 'Invalid JSON.' }); return; }
 
+  if (!message || typeof message !== 'object' || Array.isArray(message)) return;
   const type = typeof message.type === 'string' ? message.type : '';
 
   if (type === 'hello') {
@@ -316,14 +354,15 @@ async function handleMessage(ws: Sock, raw: string): Promise<void> {
     const role = message.role === 'phone' ? 'phone' : message.role === 'mac' ? 'mac' : null;
     if (!role) { send(ws, { type: 'error', code: 'bad_request', message: 'role is required.' }); return; }
     if (ws.client) return;
-    if (role === 'mac') await createMacSession(ws, message.clientId, message.sessionId);
-    else await joinPhone(ws, String(message.pairCode || ''), typeof message.sessionId === 'string' ? message.sessionId : undefined, message.deviceId);
+    if (role === 'mac') await createMacSession(ws, message.clientId, message.sessionId, message.resumeToken);
+    else await joinPhone(ws, String(message.pairCode || ''), typeof message.sessionId === 'string' ? message.sessionId : undefined, message.deviceId, message.resumeToken);
     return;
   }
 
   const client = ws.client;
   if (!client) { send(ws, { type: 'error', code: 'bad_request', message: 'Send hello first.' }); return; }
 
+  if (local.get(slot(client.sessionId, client.role)) !== client) { ws.close(4003, 'replaced'); return; }
   if (type === 'rotate_pair' && client.kind === 'mac') {
     const record = await backend.getSession(client.sessionId);
     if (!record) { send(ws, { type: 'error', code: 'no_session', message: 'No session.' }); return; }
@@ -335,6 +374,15 @@ async function handleMessage(ws: Sock, raw: string): Promise<void> {
     const event = typeof message.event === 'string' ? message.event : '';
     if (!event || event.length > 64) return;
     const payload = message.payload && typeof message.payload === 'object' ? message.payload as Record<string, unknown> : {};
+    if (event.startsWith('stream_')) {
+      const target = client.kind === 'phone' ? 'mac' : phoneRole(String(message.deviceId || ''));
+      if (!validStreamEvent(event, payload, client.kind) || (client.kind === 'mac' && !DEVICE_ID.test(String(message.deviceId || '')))) {
+        send(ws, { type: 'error', code: 'bad_signal', message: 'Invalid streaming signal.' }); return;
+      }
+      if (!local.has(slot(client.sessionId, target))) { send(ws, { type: 'error', code: 'phone_offline', message: 'Stream peer is offline.' }); return; }
+      await deliver(client.sessionId, target, { type: 'event', event, payload, deviceId: client.deviceId });
+      return;
+    }
     if (event === 'mac_online' && client.kind === 'mac') send(ws, { type: 'heartbeat_ack' });
 
     if (event === 'shell_request') {
@@ -388,6 +436,9 @@ function health(_req: IncomingMessage, res: ServerResponse): void {
   res.end(JSON.stringify({
     ok: true,
     service: 'pairspan',
+    version: '1.0.0',
+    revision: process.env.APP_REVISION || 'development',
+    signalingProtocol: 2,
     sessions: local.size,
     store: backend.kind,
     stats,
@@ -443,6 +494,11 @@ const upgraded = new WeakSet<IncomingMessage>();
 
 function acceptUpgrade(req: IncomingMessage, socket: Duplex, head: Buffer): void {
   if (upgraded.has(req)) return;
+  if (wss.clients.size >= 512) { socket.destroy(); return; }
+  const origin = req.headers.origin;
+  const allowed = (process.env.ALLOWED_ORIGINS || '').split(',').map(x => x.trim()).filter(Boolean);
+  if (origin && !allowed.includes(origin)) { socket.destroy(); return; }
+  if (process.env.REQUIRE_WSS === '1' && publicScheme(req) !== 'wss') { socket.destroy(); return; }
   const path = requestPath(req);
   if (path !== '/ws' && path !== '/') {
     socket.destroy();
@@ -471,23 +527,33 @@ server.on('upgrade', (req, socket, head) => {
 
 wss.on('connection', (socket, req) => {
   const ws = socket as Sock;
+  ws.openedAt = Date.now();
   ws.alive = true;
   ws.on('pong', () => { ws.alive = true; });
   ws.peerIp = peerAddress(req);
   stats.connections++;
   log('debug', 'socket_open', { peer: ws.peerIp });
-  const host = headerValue(req.headers['x-forwarded-host']) || headerValue(req.headers.host) || `127.0.0.1:${PORT}`;
+  const host = (process.env.TRUST_PROXY === '1' ? headerValue(req.headers['x-forwarded-host']) : '') || headerValue(req.headers.host) || `127.0.0.1:${PORT}`;
   ws.gatewayUrl = `${publicScheme(req)}://${host}`;
   ws.queue = Promise.resolve();
-  // Handle one frame at a time per socket so relayed ADB data keeps its order.
-  ws.on('message', data => {
-    ws.queue = (ws.queue ?? Promise.resolve())
-      .then(() => handleMessage(ws, String(data)))
-      .catch(error => { stats.errors++; log('error', 'handler_failed', { message: error instanceof Error ? error.message : String(error) }); send(ws, { type: 'error', code: 'internal', message: 'Gateway error.' }); });
+  // Bound both the number and bytes of pending messages. Never accumulate video frames here.
+  ws.on('message', (data, binary) => {
+    const raw = String(data), bytes = Buffer.byteLength(raw), now = Date.now();
+    if (!ws.rate || now - ws.rate.at >= 1000) ws.rate = { at: now, count: 0, bytes: 0 };
+    ws.rate.count++; ws.rate.bytes += bytes;
+    if (binary || ws.rate.count > 1024 || ws.rate.bytes > 8 * 1024 * 1024 || (ws.pending || 0) >= 64
+        || (ws.pendingBytes || 0) + bytes > 2 * 1024 * 1024 || pendingTotal >= 2048) {
+      ws.close(4008, 'message limit'); return;
+    }
+    ws.pending = (ws.pending || 0) + 1; ws.pendingBytes = (ws.pendingBytes || 0) + bytes; pendingTotal++;
+    ws.queue = atomic(async () => { if (ws.readyState === WebSocket.OPEN) await handleMessage(ws, raw); })
+      .catch(() => { stats.errors++; send(ws, { type: 'error', code: 'internal', message: 'Gateway error.' }); })
+      .finally(() => { ws.pending!--; ws.pendingBytes! -= bytes; pendingTotal--; });
   });
+  let detached = false;
   const closed = () => {
-    const client = ws.client;
-    if (client) (ws.queue ?? Promise.resolve()).then(() => detach(client)).catch(() => { /* ignore */ });
+    if (detached) return; detached = true;
+    void atomic(async () => { if (ws.client) await detach(ws.client); });
   };
   ws.on('close', closed);
   ws.on('error', closed);
@@ -497,13 +563,20 @@ wss.on('connection', (socket, req) => {
 setInterval(() => {
   for (const ws of wss.clients as Set<Sock>) {
     if (ws.readyState !== WebSocket.OPEN) continue;
+    if (!ws.client && Date.now() - (ws.openedAt || 0) > 10_000) { ws.terminate(); continue; }
     if (ws.alive === false) { ws.terminate(); continue; }
+    if (ws.client) void atomic(async () => {
+      const client = ws.client!;
+      if (local.get(slot(client.sessionId, client.role)) !== client) return;
+      const record = await backend.getSession(client.sessionId);
+      if (record?.members[client.role]) { record.members[client.role].expiresAt = Date.now() + MEMBER_TTL; await backend.putSession(record); }
+    });
     ws.alive = false;
     ws.ping();
   }
 }, 20_000).unref();
 
-setInterval(async () => {
+setInterval(() => { void atomic(async () => {
   await backend.sweep();
   const now = Date.now();
   for (const client of [...local.values()]) {
@@ -515,7 +588,7 @@ setInterval(async () => {
       else await backend.putSession(record);
     } catch { /* retry on the next sweep */ }
   }
-}, 30_000).unref();
+}); }, 30_000).unref();
 
 setInterval(() => log('info', 'stats', { ...stats, sessionsLive: local.size }), 5 * 60_000).unref();
 

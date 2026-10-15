@@ -65,6 +65,14 @@ let settings = { url: DEFAULT_GATEWAY_URL, token: '' };
 const phones = new Map<string, PhoneEntry>();
 let socket: WebSocket | undefined;
 let sessionId = '';
+let resumeToken = '';
+const streamListeners = new Set<(deviceId: string, event: string, payload: Record<string, unknown>) => void>();
+export function onStream(listener: (deviceId: string, event: string, payload: Record<string, unknown>) => void): () => void { streamListeners.add(listener); return () => { streamListeners.delete(listener); }; }
+export function streamSignal(deviceId: string, event: string, payload: Record<string, unknown>): void {
+  if (!phones.has(deviceId) || !/^stream_(request|offer|ice|stop)$/.test(event) || JSON.stringify(payload).length > 100_000) throw new Error('Invalid stream signal');
+  if (socket?.readyState !== WebSocket.OPEN || socket.bufferedAmount > 2 * 1024 * 1024) throw new Error('Signaling unavailable');
+  send({ type: 'event', deviceId, event, payload });
+}
 let lastServerMessageMs = 0;
 let heartbeat: NodeJS.Timeout | undefined;
 let rotation: NodeJS.Timeout | undefined;
@@ -217,6 +225,10 @@ function normalizeBaseUrl(raw: string): string {
       || url.search || url.hash || !['/', '/ws'].includes(url.pathname)) {
     throw new Error('Enter only the gateway base URL (for example https://example.com).');
   }
+  const host = url.hostname;
+  const privateV4 = /^\d{1,3}(\.\d{1,3}){3}$/.test(host) && /^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(host);
+  const privateHost = privateV4 || host === 'localhost' || host === '[::1]' || host.endsWith('.local');
+  if (['http:', 'ws:'].includes(url.protocol) && !privateHost) throw new Error('Internet signaling requires HTTPS/WSS.');
   return `${url.protocol}//${url.host}`;
 }
 
@@ -247,7 +259,7 @@ function pairingBaseUrl(): string {
 }
 
 function send(message: object): void {
-  if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(message));
+  if (socket?.readyState === WebSocket.OPEN) { if (socket.bufferedAmount > 2 * 1024 * 1024) { socket.close(); return; } socket.send(JSON.stringify(message)); }
 }
 
 function acceptPhone(deviceId: string, payload: Record<string, unknown>): void {
@@ -304,12 +316,11 @@ function handleMessage(raw: string): void {
   const type = typeof message.type === 'string' ? message.type : '';
 
   if (type === 'welcome') {
+    resumeToken = typeof message.resumeToken === 'string' ? message.resumeToken : '';
     if (typeof message.sessionId === 'string') sessionId = message.sessionId;
     const pairCode = typeof message.pairCode === 'string' ? message.pairCode : state.pairCode;
     const qrPayload = pairCode ? pairingPayload(pairCode) : '';
     publish({ status: 'online', error: null, pairCode, qrPayload });
-    console.log(`PAIRSPAN_PAIR_CODE=${pairCode}`);
-    console.log(`PAIRSPAN_QR_PAYLOAD=${qrPayload}`);
     send({ type: 'event', event: 'mac_online', payload: { at: new Date().toISOString(), clientId: state.clientId } });
     return;
   }
@@ -318,13 +329,12 @@ function handleMessage(raw: string): void {
     const pairCode = typeof message.pairCode === 'string' ? message.pairCode : '';
     if (pairCode) {
       publish({ pairCode, qrPayload: pairingPayload(pairCode) });
-      console.log(`PAIRSPAN_PAIR_CODE=${pairCode}`);
-      console.log(`PAIRSPAN_QR_PAYLOAD=${pairingPayload(pairCode)}`);
     }
     return;
   }
 
   if (type === 'error') {
+    if (message.code === 'invalid_session') { sessionId = ''; resumeToken = ''; }
     const error = typeof message.code === 'string' ? `err.${message.code}` : typeof message.message === 'string' ? message.message : 'err.closed';
     publish({ error });
     return;
@@ -339,6 +349,7 @@ function handleMessage(raw: string): void {
     const fromPayload = typeof payload.deviceId === 'string' ? payload.deviceId : '';
     const deviceId = DEVICE_ID.test(fromGateway) ? fromGateway : DEVICE_ID.test(fromPayload) ? fromPayload : LEGACY_DEVICE_ID;
     // `phone_online` is written by the gateway itself and never names a phone on gateways that predate device ids.
+    if (event.startsWith('stream_')) { for (const listener of streamListeners) listener(deviceId, event, payload); return; }
     if (event === 'phone_online' && deviceId === LEGACY_DEVICE_ID) return;
     if (event === 'phone_hello' || event === 'phone_heartbeat' || event === 'phone_online') acceptPhone(deviceId, payload);
     else if (event === 'phone_bye') {
@@ -386,7 +397,7 @@ function connect(): void {
     return;
   }
   const current = socket;
-  current.addEventListener('open', () => { if (socket === current) send({ type: 'hello', role: 'mac', clientId: state.clientId, sessionId, token: settings.token }); });
+  current.addEventListener('open', () => { if (socket === current) send({ type: 'hello', role: 'mac', clientId: state.clientId, sessionId, resumeToken, token: settings.token }); });
   current.addEventListener('message', event => {
     if (socket !== current) return;
     lastServerMessageMs = Date.now();

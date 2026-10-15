@@ -33,7 +33,7 @@ android {
         applicationId = "com.pairspan"
         minSdk = 26
         targetSdk = 35
-        versionCode = 5
+        versionCode = 6
         versionName = "1.0.0"
         buildConfigField("String", "GATEWAY_URL", "\"$gatewayUrl\"")
         buildConfigField("String", "GATEWAY_TOKEN", "\"$gatewayToken\"")
@@ -68,6 +68,7 @@ android {
 }
 
 dependencies {
+    implementation("io.github.webrtc-sdk:android:144.7559.15")
     val composeBom = platform("androidx.compose:compose-bom:2025.05.00")
     implementation(composeBom)
     implementation("androidx.activity:activity-compose:1.10.1")

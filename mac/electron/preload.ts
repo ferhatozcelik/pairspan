@@ -1,6 +1,13 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
 contextBridge.exposeInMainWorld('pairspan', {
+  streamConfig: () => ipcRenderer.invoke('stream:config'),
+  streamSignal: (deviceId: string, event: string, payload: unknown) => ipcRenderer.invoke('stream:signal', deviceId, event, payload),
+  onStreamSignal: (callback: (value: unknown) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, value: unknown) => callback(value);
+    ipcRenderer.on('stream:signal', listener);
+    return () => ipcRenderer.removeListener('stream:signal', listener);
+  },
   gatewayState: () => ipcRenderer.invoke('gateway:state'),
   copyPairCode: () => ipcRenderer.invoke('gateway:pair:copy'),
   copyAdbProxy: (deviceId: string) => ipcRenderer.invoke('gateway:adb:copy', deviceId),

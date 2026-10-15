@@ -1,6 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
     <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
@@ -49,6 +50,8 @@
             android:exported="false"
             android:screenOrientation="portrait"
             android:theme="@android:style/Theme.Material.Light.NoActionBar" />
+        <activity android:name=".StreamConsentActivity" android:exported="false" />
+        <service android:name=".ScreenStreamService" android:exported="false" android:foregroundServiceType="mediaProjection" />
         <service
             android:name=".GatewayService"
             android:exported="false"

@@ -1,0 +1,116 @@
+{
+  "source": "Synthetic canvas in Electron on the same machine; NOT an Android or internet benchmark",
+  "first": {
+    "video": {
+      "width": 1280,
+      "height": 720,
+      "frames": 176
+    },
+    "metrics": {
+      "Capture FPS": "30.0",
+      "Encoded FPS": "30.0",
+      "Rendered FPS": "29.0",
+      "Received bitrate": "1.0 Mbps",
+      "RTT (network)": "1.0 ms",
+      "Packet loss": "0.0%",
+      "Jitter": "1.0 ms",
+      "Jitter buffer": "4.5 ms",
+      "Dropped frames (receiver)": "0.0",
+      "Capture frames skipped": "\u2014",
+      "Encoder time/frame": "\u2014",
+      "Decoder time/frame": "1.7 ms",
+      "Estimated video latency P50": "\u2014",
+      "Estimated video latency P95": "\u2014",
+      "Estimated video latency P99": "\u2014",
+      "Render gaps >500 ms": "0.0",
+      "Last recovery": "\u2014",
+      "Encoder": "\u2014",
+      "Decoder": "\u2014",
+      "Efficient decoder": "\u2014",
+      "Codec": "video/H264",
+      "Transport": "udp",
+      "Candidate": "host"
+    },
+    "smoke": {
+      "commands": [],
+      "answers": 1,
+      "stopped": false
+    }
+  },
+  "afterIceRestart": {
+    "video": {
+      "width": 1280,
+      "height": 720,
+      "frames": 296
+    },
+    "metrics": {
+      "Capture FPS": "30.0",
+      "Encoded FPS": "30.0",
+      "Rendered FPS": "29.9",
+      "Received bitrate": "2.1 Mbps",
+      "RTT (network)": "1.0 ms",
+      "Packet loss": "0.0%",
+      "Jitter": "0.0 ms",
+      "Jitter buffer": "9.1 ms",
+      "Dropped frames (receiver)": "0.0",
+      "Capture frames skipped": "\u2014",
+      "Encoder time/frame": "\u2014",
+      "Decoder time/frame": "1.5 ms",
+      "Estimated video latency P50": "\u2014",
+      "Estimated video latency P95": "\u2014",
+      "Estimated video latency P99": "\u2014",
+      "Render gaps >500 ms": "0.0",
+      "Last recovery": "\u2014",
+      "Encoder": "\u2014",
+      "Decoder": "\u2014",
+      "Efficient decoder": "\u2014",
+      "Codec": "video/H264",
+      "Transport": "udp",
+      "Candidate": "host"
+    },
+    "smoke": {
+      "commands": [],
+      "answers": 2,
+      "stopped": false
+    }
+  },
+  "rotated": {
+    "video": {
+      "width": 720,
+      "height": 1280,
+      "frames": 446
+    },
+    "metrics": {
+      "Capture FPS": "\u2014",
+      "Encoded FPS": "\u2014",
+      "Rendered FPS": "31.1",
+      "Received bitrate": "1.1 Mbps",
+      "RTT (network)": "0.0 ms",
+      "Packet loss": "0.0%",
+      "Jitter": "0.0 ms",
+      "Jitter buffer": "8.6 ms",
+      "Dropped frames (receiver)": "0.0",
+      "Capture frames skipped": "\u2014",
+      "Encoder time/frame": "\u2014",
+      "Decoder time/frame": "1.4 ms",
+      "Estimated video latency P50": "\u2014",
+      "Estimated video latency P95": "\u2014",
+      "Estimated video latency P99": "\u2014",
+      "Render gaps >500 ms": "0.0",
+      "Last recovery": "\u2014",
+      "Encoder": "\u2014",
+      "Decoder": "\u2014",
+      "Efficient decoder": "\u2014",
+      "Codec": "video/H264",
+      "Transport": "udp",
+      "Candidate": "host"
+    },
+    "smoke": {
+      "commands": [],
+      "answers": 3,
+      "stopped": false
+    }
+  },
+  "date": "2026-10-15",
+  "limitations": "Capture/encoded FPS are mock fixture inputs. Only receiver values and functional assertions were measured. No real Android/internet, sustained, thermal or glass-to-glass test."
+}

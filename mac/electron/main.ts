@@ -87,11 +87,20 @@ app.whenReady().then(async () => {
     await gateway.runCommand(deviceId, command);
   });
 
+  ipcMain.handle('stream:signal', (event, deviceId: unknown, name: unknown, payload: unknown) => {
+    if (event.sender !== window?.webContents || typeof deviceId !== 'string' || typeof name !== 'string' || !payload || typeof payload !== 'object') throw new Error('Invalid signal');
+    gateway.streamSignal(deviceId, name, payload as Record<string, unknown>);
+  });
+  ipcMain.handle('stream:config', event => {
+    if (event.sender !== window?.webContents) throw new Error('Invalid window');
+    return JSON.parse(process.env.WEBRTC_ICE_SERVERS || '[{"urls":"stun:stun.l.google.com:19302"}]');
+  });
+  gateway.onStream((deviceId, event, payload) => window?.webContents.send('stream:signal', { deviceId, event, payload }));
   window = new BrowserWindow({
     width: 380, height: 520, minWidth: 340, minHeight: 420, show: false,
     resizable: true, skipTaskbar: true, title: 'Pairspan',
     icon: join(app.getAppPath(), 'assets', 'icon.png'),
-    webPreferences: { preload: join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true }
+    webPreferences: { preload: join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true, backgroundThrottling: false }
   });
   window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   window.webContents.on('will-navigate', event => event.preventDefault());

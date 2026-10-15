@@ -18,3 +18,6 @@ supabase/
 .DS_Store
 android/.kotlin/
 web/backend.mjs
+
+.npm-cache/
+.electron-cache/

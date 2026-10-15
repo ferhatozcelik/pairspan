@@ -33,7 +33,11 @@ export interface GatewayState {
 export interface UsbDevice { serial: string; state: 'device' | 'unauthorized' | 'offline'; model: string }
 export interface GrantResult { ok: boolean; message: string }
 
+export interface StreamSignal { deviceId: string; event: string; payload: Record<string, any> }
 export interface PairspanApi {
+  streamConfig(): Promise<RTCIceServer[]>;
+  streamSignal(deviceId: string, event: string, payload: unknown): Promise<void>;
+  onStreamSignal(callback: (value: StreamSignal) => void): () => void;
   usbDevices(): Promise<UsbDevice[]>;
   grantPermission(serial: string): Promise<GrantResult>;
   gatewayState(): Promise<GatewayState>;

@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.0 — WebRTC update (2026-10-15)
+
+- Add user-consented native Android H.264 screen streaming and direct Electron WebRTC rendering (720p / 30 FPS target).
+- Preserve ADB device management, commands and APK installation, with bounded signaling and command queues.
+- Add authenticated reconnect, UDP ICE negotiation/recovery, rotation handling, diagnostics and bounded statistics export.
+- Android versionCode is 6; public version remains 1.0.0. Upgrade all components and pair devices again.
+- No database or TURN dependency. Restrictive NATs can prevent direct connectivity.
+- Builds and automated integration/synthetic renderer tests pass; real-device 30-minute, thermal and cross-network validation is still pending.
+
+
 All notable changes to Pairspan are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses [semantic versions](https://semver.org/spec/v2.0.0.html).
 
 ## [1.0.0] - 2026-10-08

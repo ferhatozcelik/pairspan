@@ -19,7 +19,10 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.RejectedExecutionException;
 
 public final class GatewayService extends Service {
     private static final String CHANNEL_ID = "pairspan_gateway";
@@ -36,12 +39,53 @@ public final class GatewayService extends Service {
     private String activeSessionId = "";
     private String pendingPairCode = "";
     private int retrySeconds = 2;
-    private final ExecutorService commandWorker = Executors.newSingleThreadExecutor();
+    private final ExecutorService commandWorker = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(16));
     private final Set<String> handledRequests = new HashSet<>();
     private AdbTunnel adbTunnel;
+    private static volatile GatewayService active;
+    private static volatile JSONObject streamRequest;
+    private static volatile long streamRequestAt;
+    static boolean hasStreamRequest() { return active != null && streamRequest != null && System.currentTimeMillis() - streamRequestAt < 60000; }
+    static Intent consumeStreamConsent(android.content.Context context, Intent permission) {
+        if (!hasStreamRequest()) return null;
+        JSONObject request = streamRequest; streamRequest = null;
+        active.getSystemService(NotificationManager.class).cancel(3);
+        return new Intent(context, ScreenStreamService.class).putExtra("permission", permission).putExtra("request", request.toString());
+    }
+    static void rejectStreamConsent() {
+        JSONObject request = streamRequest; streamRequest = null;
+        if (request != null) try { streamSend("stream_status", new JSONObject().put("streamId", request.optString("streamId")).put("state", "Screen sharing permission denied")); } catch (JSONException ignored) { }
+        if (active != null) active.getSystemService(NotificationManager.class).cancel(3);
+    }
+    static boolean streamSend(String event, JSONObject payload) {
+        GatewayService service = active;
+        return service != null && service.socket != null && service.socket.sendEvent(event, payload);
+    }
+    private void handleStream(String event, JSONObject payload) {
+        handler.post(() -> {
+            if ("stream_request".equals(event)) {
+                if (ScreenStreamService.handleSignal(event, payload)) return;
+                if (ScreenStreamService.isRunning()) {
+                    try { streamSend("stream_status", new JSONObject().put("streamId", payload.optString("streamId")).put("state", "Another stream is active. Stop sharing on the phone first.")); } catch (JSONException ignored) { }
+                    return;
+                }
+                streamRequest = payload; streamRequestAt = System.currentTimeMillis();
+                Intent consent = new Intent(this, StreamConsentActivity.class);
+                PendingIntent pending = PendingIntent.getActivity(this, 7, consent, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+                getSystemService(NotificationManager.class).notify(3, new Notification.Builder(this, CHANNEL_ID)
+                    .setSmallIcon(R.drawable.ic_pairspan_notification).setContentTitle("Pairspan screen sharing")
+                    .setContentText("Tap to allow your paired computer to view your screen").setContentIntent(pending).setAutoCancel(true).build());
+                try { streamSend("stream_status", new JSONObject().put("streamId", payload.optString("streamId")).put("state", "Allow screen sharing on your phone")); } catch (JSONException ignored) { }
+            } else {
+                if ("stream_stop".equals(event) && streamRequest != null && streamRequest.optString("streamId").equals(payload.optString("streamId"))) rejectStreamConsent();
+                ScreenStreamService.handleSignal(event, payload);
+            }
+        });
+    }
 
     @Override public void onCreate() {
         super.onCreate();
+        active = this;
         NotificationManager manager = getSystemService(NotificationManager.class);
         manager.createNotificationChannel(new NotificationChannel(CHANNEL_ID, getString(R.string.notif_channel), NotificationManager.IMPORTANCE_LOW));
         ShellBridge.init(this);
@@ -137,16 +181,19 @@ public final class GatewayService extends Service {
                 if (clientId != null && clientId.matches("[0-9a-f]{32}")) getSharedPreferences(PREFS, MODE_PRIVATE).edit().putString("clientId", clientId).apply();
                 updateStatus(getString(R.string.status_waiting));
                 sendPhone("phone_hello");
+                ScreenStreamService.signalingRestored();
             }
 
             @Override public void onEvent(String event, JSONObject payload) {
                 if (currentGeneration != generation) return;
+                if (event.startsWith("stream_")) { handleStream(event, payload); return; }
                 if ("mac_online".equals(event) || "mac_ack".equals(event)) {
                     String macClientId = payload.optString("clientId");
                     if (macClientId.matches("[0-9a-f]{32}")) getSharedPreferences(PREFS, MODE_PRIVATE).edit().putString("clientId", macClientId).apply();
                     lastMacAt = System.currentTimeMillis();
                     updateStatus(getString(R.string.status_connected));
                 } else if ("mac_offline".equals(event)) {
+                    ScreenStreamService.signalingLost();
                     lastMacAt = 0;
                     updateStatus(getString(R.string.status_waiting));
                 } else if ("shell_request".equals(event)) {
@@ -176,6 +223,7 @@ public final class GatewayService extends Service {
                 }
                 if (state.startsWith("error:") || "closed".equals(state)) {
                     updateStatus(getString(R.string.status_retrying));
+                    ScreenStreamService.signalingLost();
                     scheduleReconnect();
                 }
             }
@@ -223,14 +271,20 @@ public final class GatewayService extends Service {
             if (handledRequests.size() >= 128) handledRequests.clear();
             if (!handledRequests.add(id)) return;
         }
-        commandWorker.execute(() -> {
+        try { commandWorker.execute(() -> {
             try {
                 JSONObject result = new JSONObject(ShellBridge.run(command))
                         .put("id", id).put("command", command);
                 GatewaySocket current = socket;
                 if (current != null) current.sendEvent("shell_result", result);
             } catch (JSONException ignored) { }
-        });
+        }); } catch (RejectedExecutionException busy) {
+            try {
+                JSONObject result = new JSONObject().put("id", id).put("command", command).put("exitCode", -1).put("output", "ADB command queue is full; retry after the current command finishes.");
+                GatewaySocket current = socket;
+                if (current != null) current.sendEvent("shell_result", result);
+            } catch (JSONException ignored) { }
+        }
     }
 
     private final Runnable heartbeat = new Runnable() {
@@ -260,6 +314,9 @@ public final class GatewayService extends Service {
     }
 
     @Override public void onDestroy() {
+        active = null; streamRequest = null;
+        stopService(new Intent(this, ScreenStreamService.class));
+        getSystemService(NotificationManager.class).cancel(3);
         running = false;
         generation++;
         handler.removeCallbacksAndMessages(null);

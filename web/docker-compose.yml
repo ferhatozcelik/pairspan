@@ -6,5 +6,8 @@ services:
     restart: always
     env_file:
       - ./temp.env
+    environment:
+      REQUIRE_WSS: "1"
+      TRUST_PROXY: "1" # Backend port is loopback-only; TLS terminates at the trusted reverse proxy.
     ports:
       - "127.0.0.1:16200:3000"

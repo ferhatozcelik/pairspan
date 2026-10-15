@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "private": true,
   "description": "Wireless ADB bridge between a Mac and an Android phone.",
-  "author": "Ferhat Özçelik",
+  "author": "Ferhat \u00d6z\u00e7elik",
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "concurrently -k \"vite --host 127.0.0.1\" \"tsc -p tsconfig.electron.json --watch\" \"wait-on http://127.0.0.1:5173 dist-electron/main.js && cross-env PAIRSPAN_DEV_URL=http://127.0.0.1:5173 electron .\"",
@@ -14,7 +14,8 @@
     "start": "electron .",
     "test": "tsc -p tsconfig.electron.json && node --test test/*.test.cjs",
     "install:debug": "bash scripts/install-debug.sh",
-    "dist:signed": "node scripts/fetch-mac-adb.mjs && npm run build && mkdir -p pack && sips -z 1024 1024 assets/icon.png --out pack/icon.png && electron-builder --mac dmg --universal -c.mac.identity=\"$CSC_NAME\" -c.mac.notarize=true"
+    "dist:signed": "node scripts/fetch-mac-adb.mjs && npm run build && mkdir -p pack && sips -z 1024 1024 assets/icon.png --out pack/icon.png && electron-builder --mac dmg --universal -c.mac.identity=\"$CSC_NAME\" -c.mac.notarize=true",
+    "test:stream": "npm run build && electron test/stream/run.cjs"
   },
   "dependencies": {
     "dotenv": "^16.6.1",
@@ -69,8 +70,8 @@
       "artifactName": "pairspan-mac-${version}.${ext}",
       "hardenedRuntime": true,
       "gatekeeperAssess": false,
-      "entitlements": "build/entitlements.mac.plist",
-      "entitlementsInherit": "build/entitlements.mac.plist",
+      "entitlements": "assets/entitlements.mac.plist",
+      "entitlementsInherit": "assets/entitlements.mac.plist",
       "extraResources": [
         {
           "from": "vendor/mac/adb",
