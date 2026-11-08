@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Pairspan</string>
+    <string name="app_name">Pairspan — Android Device Center</string>
     <string name="tagline">Pair once. Connect wirelessly. Deploy effortlessly.</string>
     <string name="service_ok">Connected to the Pairspan service</string>
     <string name="service_down">Can\’t reach the Pairspan service</string>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Pairspan</string>
+    <string name="app_name">Pairspan — Android Device Center</string>
     <string name="tagline">Bir kez eşleştir. Kablosuz bağlan. Kolayca yayınla.</string>
     <string name="service_ok">Pairspan servisine bağlı</string>
     <string name="service_down">Pairspan servisine ulaşılamıyor</string>

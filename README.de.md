@@ -4,7 +4,7 @@
   </a>
 </p>
 
-<h1 align="center">Pairspan</h1>
+<h1 align="center">Pairspan — Android Device Center</h1>
 
 <p align="center">Verbinde dein Android-Smartphone über drahtloses ADB mit macOS oder Windows.</p>
 

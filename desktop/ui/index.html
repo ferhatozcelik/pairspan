@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pairspan — Android Device Center</title>
+<style>
+/* Get Hyped Agency UX + Clean Icon & Text Layout */
+:root{
+  --creme:#faf4ec;
+  --off-white:#fffef7;
+  --taupe:#eae4d8;
+  --black:#161616;
+  --muted:#686259;
+  --red:#fa5424;
+  --red-300:#fc997b;
+  --blue:#0d8dff;
+  --blue-400:#50c8ff;
+  --green:#33c791;
+  --green-300:#73e2b6;
+  --pink-200:#fdd0fe;
+  --danger:#dc2626;
+}
+*{box-sizing:border-box}
+::selection{background:var(--black);color:var(--off-white)}
+body{
+  margin:0;
+  background:var(--creme);
+  color:var(--black);
+  font:14.5px/1.45 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  user-select:none;-webkit-font-smoothing:antialiased;
+  background-image:radial-gradient(rgba(22,22,22,.045) 1px,transparent 0);
+  background-size:24px 24px;
+}
+button{font:inherit;cursor:pointer;transition:all .2s cubic-bezier(.16,1,.3,1)}
+
+/* Mode 1: Main App (Pairspan — Android Device Center) */
+.app-shell{display:grid;grid-template-columns:255px 1fr;min-height:100vh;padding:16px;gap:18px}
+
+.sidebar{
+  background:var(--black);color:var(--off-white);
+  border-radius:30px;padding:24px 16px;
+  display:flex;flex-direction:column;gap:6px;
+  box-shadow:0 24px 60px -20px rgba(22,22,22,.32);
+}
+.brand-hero{
+  display:flex;flex-direction:column;align-items:center;text-align:center;
+  padding:8px 12px 22px;margin-bottom:8px;
+  border-bottom:1px solid rgba(255,255,255,.1);
+}
+.brand-hero img{
+  width:58px;height:58px;border-radius:18px;
+  border:2px solid rgba(255,255,255,.18);
+  box-shadow:0 10px 24px rgba(0,0,0,.35);
+  margin-bottom:10px;
+}
+.brand-hero strong{font-size:1.25rem;font-weight:800;letter-spacing:-.03em}
+.brand-hero span{font-size:.76rem;color:#a8a29e;font-weight:700;margin-top:3px}
+
+.nav-btn{
+  background:transparent;border:none;color:#b8b2a8;
+  text-align:left;padding:12px 14px;border-radius:999px;
+  font-weight:700;font-size:.9rem;letter-spacing:-.01em;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.nav-btn-left{display:flex;align-items:center;gap:11px}
+.nav-btn-left svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.nav-btn:hover{background:rgba(255,255,255,.08);color:var(--off-white);transform:translateX(2px)}
+.nav-btn.active{background:var(--red);color:var(--off-white);box-shadow:0 12px 26px -8px rgba(250,84,36,.65)}
+.nav-btn .badge{font-size:.72rem;background:rgba(255,255,255,.14);color:var(--off-white);padding:2px 9px;border-radius:999px;font-weight:800}
+.nav-btn.active .badge{background:var(--off-white);color:var(--black)}
+
+.sidebar-card{
+  margin-top:auto;background:#222222;border:1px solid rgba(255,255,255,.08);
+  border-radius:22px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;
+}
+.live-pill{display:flex;align-items:center;gap:8px;font-weight:700;font-size:.82rem;color:var(--off-white)}
+.live-pill i{width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 0 4px rgba(51,199,145,.22)}
+
+/* Main Workspace */
+.content{padding:6px 12px 20px;overflow-y:auto;max-height:calc(100vh - 32px);display:flex;flex-direction:column;gap:16px}
+
+.top-bar{
+  background:var(--off-white);border:1.5px solid rgba(22,22,22,.08);
+  border-radius:28px;padding:18px 24px;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  box-shadow:0 16px 36px -24px rgba(22,22,22,.08);
+}
+.top-title{display:flex;align-items:center;gap:14px}
+.top-icon{
+  width:46px;height:46px;border-radius:15px;background:var(--taupe);
+  display:grid;place-items:center;color:var(--black);flex:none;
+}
+.top-icon svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round}
+.top-title h1{margin:0;font-size:1.45rem;font-weight:800;letter-spacing:-.035em}
+.top-title small{display:block;color:var(--muted);font-size:.84rem;font-weight:600;margin-top:2px}
+
+.pill-status{
+  display:inline-flex;align-items:center;gap:8px;
+  background:var(--green-300);color:var(--black);
+  padding:8px 16px;border-radius:999px;font-size:.82rem;font-weight:800;
+  white-space:nowrap;
+}
+.pill-status i{width:8px;height:8px;border-radius:50%;background:var(--black)}
+
+.panel{display:none}
+.panel.active{display:block}
+
+.card{
+  background:var(--off-white);border:1.5px solid rgba(22,22,22,.08);
+  border-radius:30px;padding:24px;margin-bottom:16px;
+  box-shadow:0 20px 50px -28px rgba(22,22,22,.1);
+}
+.card-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:16px}
+.card-head h3{margin:0;font-size:1.15rem;font-weight:800;letter-spacing:-.025em;display:flex;align-items:center;gap:10px}
+.card-head h3 svg{width:20px;height:20px;stroke:var(--red);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+
+/* Signature GetHyped Pill Buttons */
+.btn{
+  background:var(--red);color:var(--off-white);border:none;
+  padding:8px 8px 8px 20px;border-radius:999px;font-weight:700;font-size:.86rem;
+  display:inline-flex;align-items:center;gap:10px;
+  box-shadow:0 12px 24px -8px rgba(250,84,36,.45);
+}
+.btn:hover{transform:translateY(-2px);background:var(--black)}
+.btn .ic-ball{
+  width:28px;height:28px;border-radius:50%;background:var(--off-white);color:var(--black);
+  display:grid;place-items:center;
+}
+.btn .ic-ball svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.btn.ghost{
+  background:var(--taupe);color:var(--black);padding:9px 16px;box-shadow:none;
+}
+.btn.ghost:hover{background:var(--black);color:var(--off-white)}
+.btn.danger{
+  background:#fee2e2;color:#991b1b;padding:9px 16px;box-shadow:none;
+}
+.btn.danger:hover{background:var(--danger);color:#fff}
+
+/* Icon + Text Step Cards */
+.wizard-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px}
+.w-step{
+  background:var(--off-white);border:1.5px solid rgba(22,22,22,.08);
+  border-radius:26px;padding:20px;display:flex;align-items:flex-start;gap:14px;
+}
+.w-ic{
+  width:44px;height:44px;border-radius:14px;display:grid;place-items:center;flex:none;
+}
+.w-step:nth-child(1) .w-ic{background:var(--red-300)}
+.w-step:nth-child(2) .w-ic{background:var(--blue-400)}
+.w-step:nth-child(3) .w-ic{background:var(--green-300)}
+.w-ic svg{width:22px;height:22px;stroke:var(--black);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.w-step b{display:block;color:var(--black);font-size:.98rem;font-weight:800;letter-spacing:-.02em;margin-bottom:3px}
+.w-step span{color:var(--muted);font-size:.82rem;font-weight:600;display:block}
+
+/* Clean Icon + Text Device Cards */
+.device-row{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  background:var(--creme);border:1.5px solid rgba(22,22,22,.08);
+  border-radius:22px;padding:16px 20px;margin-bottom:10px;
+  transition:border-color .2s,transform .2s;
+}
+.device-row:hover{border-color:var(--black);transform:translateY(-1px)}
+.device-left{display:flex;align-items:center;gap:14px}
+.device-avatar{
+  width:48px;height:48px;border-radius:16px;background:var(--black);color:var(--off-white);
+  display:grid;place-items:center;flex:none;
+}
+.device-avatar svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.device-meta b{display:flex;align-items:center;gap:8px;font-size:1.04rem;letter-spacing:-.02em;margin-bottom:2px}
+.device-meta span{color:var(--muted);font-size:.83rem;font-weight:600}
+.tag-pill{
+  font-size:.72rem;font-weight:800;padding:3px 10px;border-radius:999px;
+  background:var(--green-300);color:var(--black);
+}
+.tag-pill.warn{background:var(--red-300)}
+
+.log-box{
+  background:var(--black);border-radius:22px;padding:18px 20px;
+  font:12.5px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace;
+  color:var(--off-white);max-height:260px;overflow-y:auto;
+}
+.log-box div{padding:3px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+
+/* Mode 2: Dedicated Status Bar Tray Widget (?mode=widget) — Lists Connected Devices */
+body.widget-mode .app-shell{display:none}
+.widget-shell{
+  display:none;padding:16px;background:var(--black);color:var(--off-white);
+  min-height:100vh;flex-direction:column;justify-content:space-between;
+}
+body.widget-mode .widget-shell{display:flex}
+.w-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,.1);
+}
+.w-brand{display:flex;align-items:center;gap:10px}
+.w-brand img{width:32px;height:32px;border-radius:10px}
+.w-brand strong{display:block;font-size:.95rem;font-weight:800;letter-spacing:-.02em}
+.w-brand small{display:block;font-size:.72rem;color:#a8a29e;font-weight:600}
+.w-badge{
+  font-size:.7rem;font-weight:800;padding:4px 10px;border-radius:999px;
+  background:var(--green-300);color:var(--black);
+}
+.w-list{
+  flex:1;overflow-y:auto;margin:12px 0;display:flex;flex-direction:column;gap:8px;
+}
+.w-item{
+  background:#222222;border:1px solid rgba(255,255,255,.08);
+  border-radius:16px;padding:12px 14px;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+}
+.w-item-left{display:flex;align-items:center;gap:10px}
+.w-item-ic{
+  width:36px;height:36px;border-radius:11px;background:rgba(255,255,255,.08);
+  display:grid;place-items:center;color:var(--off-white);flex:none;
+}
+.w-item-ic svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2}
+.w-item b{display:block;font-size:.9rem;color:var(--off-white)}
+.w-item span{display:flex;align-items:center;gap:5px;font-size:.75rem;color:var(--green-300);font-weight:700}
+.w-item span i{width:6px;height:6px;border-radius:50%;background:var(--green)}
+.w-item-btn{
+  background:rgba(255,255,255,.1);color:var(--off-white);border:none;
+  padding:6px 11px;border-radius:999px;font-size:.74rem;font-weight:700;
+}
+.w-item-btn:hover{background:var(--red)}
+.w-footer{
+  padding-top:10px;border-top:1px solid rgba(255,255,255,.1);
+  display:flex;gap:8px;
+}
+.w-footer .btn{flex:1;justify-content:center;padding:9px 14px;font-size:.82rem}
+</style>
+</head>
+<body>
+
+<!-- STATUS BAR WIDGET POPOVER (Only shown in system tray window ?mode=widget) -->
+<div class="widget-shell">
+  <div class="w-header">
+    <div class="w-brand">
+      <img src="icon.webp" alt="Pairspan">
+      <div>
+        <strong>Pairspan</strong>
+        <small>Android Device Center</small>
+      </div>
+    </div>
+    <span class="w-badge" id="wCountBadge">1 Bağlı</span>
+  </div>
+
+  <div class="w-list" id="widgetDeviceList"></div>
+
+  <div class="w-footer">
+    <button class="btn" id="wBtnOpenCenter" type="button">Device Center’ı Aç</button>
+  </div>
+</div>
+
+<!-- MAIN APPLICATION WINDOW (Pairspan — Android Device Center) -->
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand-hero">
+      <img src="icon.webp" alt="Pairspan">
+      <strong>Pairspan</strong>
+      <span>Android Device Center</span>
+    </div>
+
+    <button class="nav-btn active" data-tab="tab-devices" type="button">
+      <span class="nav-btn-left">
+        <svg viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="3"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+        <span>Telefonlarım</span>
+      </span>
+      <span class="badge" id="pairedCountBadge">1</span>
+    </button>
+
+    <button class="nav-btn" data-tab="tab-usb" type="button">
+      <span class="nav-btn-left">
+        <svg viewBox="0 0 24 24"><path d="M12 2v13"/><path d="m8 6 4-4 4 4"/><rect x="7" y="15" width="10" height="7" rx="2"/></svg>
+        <span>USB Kurulumu</span>
+      </span>
+      <span class="badge" id="usbCountBadge">+</span>
+    </button>
+
+    <button class="nav-btn" data-tab="tab-logs" type="button">
+      <span class="nav-btn-left">
+        <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <span>Geçmiş</span>
+      </span>
+    </button>
+
+    <div class="sidebar-card">
+      <div class="live-pill"><i></i><span>Otomatik Bağlanma</span></div>
+    </div>
+  </aside>
+
+  <main class="content">
+    <div class="top-bar">
+      <div class="top-title">
+        <div class="top-icon">
+          <svg viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="3"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+        </div>
+        <div>
+          <h1 id="pageTitle">Telefonlarım</h1>
+          <small id="pageSub">Eşleşmiş cihazlar otomatik bağlanır</small>
+        </div>
+      </div>
+      <div class="pill-status"><i></i><span id="globalBridgeStatus">Aktif</span></div>
+    </div>
+
+    <!-- TAB 1: PAIRED PHONES -->
+    <section class="panel active" id="tab-devices">
+      <div class="card">
+        <div class="card-head">
+          <h3>
+            <svg viewBox="0 0 24 24"><path d="M5 12.5a10 10 0 0 1 14 0"/><path d="M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19.5" r="1"/></svg>
+            <span>Bağlı Cihazlar</span>
+          </h3>
+          <button class="btn ghost" id="btnGoUsb" type="button">+ Telefon Ekle</button>
+        </div>
+        <div id="pairedListContainer"></div>
+      </div>
+    </section>
+
+    <!-- TAB 2: USB SETUP -->
+    <section class="panel" id="tab-usb">
+      <div class="wizard-steps">
+        <div class="w-step">
+          <div class="w-ic"><svg viewBox="0 0 24 24"><path d="M12 2v13"/><rect x="7" y="15" width="10" height="7" rx="2"/></svg></div>
+          <div>
+            <b>1. USB ile Takın</b>
+            <span>Telefonu kabloyla bağlayın</span>
+          </div>
+        </div>
+        <div class="w-step">
+          <div class="w-ic"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>
+          <div>
+            <b>2. Otomatik Kurulum</b>
+            <span>Uygulama ve izinler kurulur</span>
+          </div>
+        </div>
+        <div class="w-step">
+          <div class="w-ic"><svg viewBox="0 0 24 24"><path d="M5 12.5a10 10 0 0 1 14 0"/><path d="M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19.5" r="1"/></svg></div>
+          <div>
+            <b>3. Kablosuz Kullanın</b>
+            <span>Kabloyu çıkarın, hep bağlı kalsın</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h3>
+            <svg viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="3"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+            <span>USB Cihazları</span>
+          </h3>
+          <button class="btn ghost" id="btnScanUsb" type="button">Yenile</button>
+        </div>
+        <div id="usbListContainer"></div>
+      </div>
+    </section>
+
+    <!-- TAB 3: ACTIVITY LOGS -->
+    <section class="panel" id="tab-logs">
+      <div class="card">
+        <div class="card-head">
+          <h3>
+            <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            <span>Son İşlemler</span>
+          </h3>
+        </div>
+        <div class="log-box" id="logContainer"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+(function(){
+  var params = new URLSearchParams(location.search);
+  if (params.get('mode') === 'widget') {
+    document.body.classList.add('widget-mode');
+  }
+
+  var SUBTITLES = {
+    'tab-devices': 'Eşleşmiş cihazlar otomatik bağlanır',
+    'tab-usb': 'Bir kez USB ile bağlayın, otomatik kurulsun',
+    'tab-logs': 'Bağlantı ve kurulum geçmişi'
+  };
+
+  var mockState = {
+    usb_candidates: [
+      { serial: '38291FDJH0019A', state: 'device', model: 'Pixel 8 Pro', transport_id: '4', apk_installed: false }
+    ],
+    paired_devices: [
+      {
+        hardware_serial: '38291FDJH0019A',
+        model: 'Pixel 8 Pro',
+        android_version: '15',
+        status: 'Connected',
+        auto_reconnect: true,
+        purged_duplicates: 2
+      }
+    ],
+    detected_ghosts: [],
+    logs: [
+      '[03:00:10] Pixel 8 Pro algılandı, uygulama otomatik kuruldu.',
+      '[03:00:12] Kablosuz bağlantı izinleri verildi.',
+      '[03:00:14] Pixel 8 Pro eşleşti.'
+    ]
+  };
+
+  var invoke = (window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke)
+    ? window.__TAURI__.core.invoke
+    : null;
+
+  async function refresh() {
+    var snap = mockState;
+    if (invoke) {
+      try { snap = await invoke('get_snapshot'); } catch (e) {}
+    }
+    renderSnapshot(snap);
+  }
+
+  function switchTab(tabId) {
+    document.querySelectorAll('.nav-btn').forEach(function(b) {
+      b.classList.toggle('active', b.getAttribute('data-tab') === tabId);
+    });
+    document.querySelectorAll('.panel').forEach(function(p) {
+      p.classList.toggle('active', p.id === tabId);
+    });
+    var activeBtn = document.querySelector('.nav-btn[data-tab="' + tabId + '"]');
+    if (activeBtn) {
+      document.getElementById('pageTitle').textContent = activeBtn.querySelector('.nav-btn-left span').textContent;
+      document.getElementById('pageSub').textContent = SUBTITLES[tabId] || '';
+    }
+  }
+
+  var phoneSvg = '<svg viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="3"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>';
+  var usbSvg = '<svg viewBox="0 0 24 24"><path d="M12 2v13"/><rect x="7" y="15" width="10" height="7" rx="2"/></svg>';
+  var arrowSvg = '<svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
+
+  function renderSnapshot(snap) {
+    document.getElementById('pairedCountBadge').textContent = snap.paired_devices.length;
+    document.getElementById('wCountBadge').textContent = snap.paired_devices.length + ' Bağlı';
+
+    // Render Status Bar Widget Connected Devices List
+    var wList = document.getElementById('widgetDeviceList');
+    if (snap.paired_devices.length === 0) {
+      wList.innerHTML = '<div class="w-item"><div class="w-item-left"><div class="w-item-ic">' + phoneSvg + '</div><div><b>Bağlı Cihaz Yok</b><span>USB ile telefon ekleyin</span></div></div></div>';
+    } else {
+      wList.innerHTML = snap.paired_devices.map(function(p) {
+        return '<div class="w-item">' +
+          '<div class="w-item-left">' +
+            '<div class="w-item-ic">' + phoneSvg + '</div>' +
+            '<div>' +
+              '<b>' + p.model + '</b>' +
+              '<span><i></i>Kablosuz Bağlı · Android ' + p.android_version + '</span>' +
+            '</div>' +
+          '</div>' +
+          '<button class="w-item-btn" data-reconnect="' + p.hardware_serial + '" type="button">Yenile</button>' +
+        '</div>';
+      }).join('');
+    }
+
+    var pairedEl = document.getElementById('pairedListContainer');
+    if (snap.paired_devices.length === 0) {
+      pairedEl.innerHTML = '<div class="device-row"><div class="device-left"><div class="device-avatar">' + phoneSvg + '</div><div class="device-meta"><b>Henüz telefon eklenmedi</b><span>USB Kurulumu sekmesinden telefonunuzu bağlayın</span></div></div></div>';
+    } else {
+      pairedEl.innerHTML = snap.paired_devices.map(function(p) {
+        return '<div class="device-row">' +
+          '<div class="device-left">' +
+            '<div class="device-avatar">' + phoneSvg + '</div>' +
+            '<div class="device-meta">' +
+              '<b>' + p.model + ' <span class="tag-pill">Bağlı</span></b>' +
+              '<span>Android ' + p.android_version + ' · Otomatik Bağlanma Açık</span>' +
+            '</div>' +
+          '</div>' +
+          '<div style="display:flex;gap:8px">' +
+            '<button class="btn ghost" data-reconnect="' + p.hardware_serial + '" type="button">Yeniden Bağla</button>' +
+            '<button class="btn danger" data-unpair="' + p.hardware_serial + '" type="button">Kaldır</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    }
+
+    var usbEl = document.getElementById('usbListContainer');
+    if (snap.usb_candidates.length === 0) {
+      usbEl.innerHTML = '<div class="device-row"><div class="device-left"><div class="device-avatar">' + usbSvg + '</div><div class="device-meta"><b>USB Cihazı Bekleniyor</b><span>Telefonunuzu USB kablosuyla bilgisayara takın</span></div></div></div>';
+    } else {
+      usbEl.innerHTML = snap.usb_candidates.map(function(u) {
+        var apkTag = u.apk_installed
+          ? '<span class="tag-pill">Hazır</span>'
+          : '<span class="tag-pill warn">Otomatik Kurulacak</span>';
+        var btnLabel = u.apk_installed ? 'Eşleştir' : 'Kur ve Eşleştir';
+        return '<div class="device-row">' +
+          '<div class="device-left">' +
+            '<div class="device-avatar">' + usbSvg + '</div>' +
+            '<div class="device-meta">' +
+              '<b>' + u.model + ' ' + apkTag + '</b>' +
+              '<span>USB ile Bağlı</span>' +
+            '</div>' +
+          '</div>' +
+          '<button class="btn" data-usb-pair="' + u.serial + '" type="button"><span>' + btnLabel + '</span><span class="ic-ball">' + arrowSvg + '</span></button>' +
+        '</div>';
+      }).join('');
+    }
+
+    var logEl = document.getElementById('logContainer');
+    logEl.innerHTML = snap.logs.map(function(l) { return '<div>' + l + '</div>'; }).join('');
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  document.querySelectorAll('.nav-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      switchTab(btn.getAttribute('data-tab'));
+    });
+  });
+
+  document.getElementById('btnGoUsb').addEventListener('click', function() {
+    switchTab('tab-usb');
+  });
+
+  document.getElementById('wBtnOpenCenter').addEventListener('click', function() {
+    if (invoke) {
+      invoke('open_main_window');
+    } else {
+      document.body.classList.remove('widget-mode');
+    }
+  });
+
+  document.body.addEventListener('click', async function(e) {
+    var btn = e.target.closest('[data-usb-pair]');
+    if (btn) {
+      var usbSerial = btn.getAttribute('data-usb-pair');
+      if (invoke) {
+        try { await invoke('usb_authorize_and_pair', { serial: usbSerial }); } catch (err) { alert(err); }
+      } else {
+        mockState.usb_candidates[0].apk_installed = true;
+        mockState.logs.push('[' + new Date().toLocaleTimeString() + '] Uygulama kuruldu ve eşleşti.');
+      }
+      await refresh();
+      switchTab('tab-devices');
+      return;
+    }
+
+    var unpairBtn = e.target.closest('[data-unpair]');
+    if (unpairBtn) {
+      var unpairSerial = unpairBtn.getAttribute('data-unpair');
+      if (invoke) {
+        await invoke('unpair_device', { hardwareSerial: unpairSerial, initiator: 'PC User' });
+      } else {
+        mockState.paired_devices = mockState.paired_devices.filter(function(d) { return d.hardware_serial !== unpairSerial; });
+        mockState.logs.push('[' + new Date().toLocaleTimeString() + '] Telefon kaldırıldı.');
+      }
+      refresh();
+      return;
+    }
+
+    var reconBtn = e.target.closest('[data-reconnect]');
+    if (reconBtn) {
+      var reconSerial = reconBtn.getAttribute('data-reconnect');
+      if (invoke) {
+        await invoke('trigger_reconnect_now', { hardwareSerial: reconSerial });
+      } else {
+        mockState.logs.push('[' + new Date().toLocaleTimeString() + '] Bağlantı yenilendi.');
+      }
+      refresh();
+    }
+  });
+
+  document.getElementById('btnScanUsb').addEventListener('click', refresh);
+
+  if (window.__TAURI__ && window.__TAURI__.event) {
+    window.__TAURI__.event.listen('pairspan://state-updated', refresh);
+  }
+
+  refresh();
+})();
+</script>
+</body>
+</html>

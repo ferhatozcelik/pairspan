@@ -4,16 +4,16 @@
   </a>
 </p>
 
-<h1 align="center">Pairspan</h1>
+<h1 align="center">Pairspan — Android Device Center</h1>
 
-<p align="center">Connect your Android phone to macOS or Windows over wireless ADB.</p>
+<p align="center">Connect your Android phone to macOS, Windows, or Linux over wireless ADB with a one-click Status Bar Widget.</p>
 
 <p align="center"><strong>Pair once. Connect wirelessly. Deploy effortlessly.</strong></p>
 
 <p align="center">
-  <a href="https://github.com/ferhatozcelik/pairspan/releases/tag/v1.0.0"><img src="https://img.shields.io/badge/release-v1.0.0-39795c" alt="Release v1.0.0"></a>
-  <img src="https://img.shields.io/badge/platforms-macOS%20%7C%20Windows%20%7C%20Android-39795c" alt="Platforms: macOS, Windows and Android">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-39795c" alt="MIT license"></a>
+  <a href="https://github.com/ferhatozcelik/pairspan/releases/tag/v1.0.0"><img src="https://img.shields.io/badge/release-v1.1.0-fa5424" alt="Release v1.1.0"></a>
+  <img src="https://img.shields.io/badge/platforms-macOS%20%7C%20Windows%20%7C%20Linux%20%7C%20Android-161616" alt="Platforms: macOS, Windows, Linux and Android">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-161616" alt="MIT license"></a>
 </p>
 
 <p align="center">
@@ -59,15 +59,32 @@
 
 [Release 1.0.0](https://github.com/ferhatozcelik/pairspan/releases/tag/v1.0.0): macOS, Windows, Android.
 
+## Quick Install (macOS)
+
+Run [`install.sh`](install.sh) to build and install **Pairspan — Android Device Center** (`/Applications/Pairspan.app`) and launch the Menu Bar (Status Bar) Widget:
+
+```bash
+chmod +x install.sh
+./install.sh
+```
+
+- **Status Bar / Menu Bar Widget:** Click the Pairspan icon in your macOS Menu Bar (or Windows/Linux system tray) to immediately list your connected Android devices and open the Device Center.
+- **Auto GitHub APK Installer:** During initial USB setup, if the Pairspan Android APK is not installed on your phone, the desktop app automatically downloads the latest release APK from GitHub Releases and installs it over USB before granting permissions.
+
 ## Folders
 
 | Piece | Folder |
 | --- | --- |
-| Android | [`android/`](android/) |
-| macOS and Windows | [`mac/`](mac/) |
-| Web | [`web/`](web/) |
+| Desktop App & Status Bar Widget (Rust / Tauri v2) | [`desktop/`](desktop/) |
+| Rust Gateway Service (Axum + Tokio) | [`gateway/`](gateway/) |
+| Android App & Widget | [`android/`](android/) |
+| Electron App (macOS & Windows) | [`mac/`](mac/) |
+| Web & Relay Server | [`web/`](web/) |
 
 ```bash
+./install.sh                                # One-command macOS build & install
+cargo run -p pairspan-desktop               # Run Rust Desktop App + Status Bar Widget
+cargo run -p pairspan-gateway               # Run Rust Gateway Service
 cd web && npm install && npm start
 cd mac && npm install && npm start
 cd android && ./gradlew :app:assembleDebug

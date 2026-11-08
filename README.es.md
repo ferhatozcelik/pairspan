@@ -4,7 +4,7 @@
   </a>
 </p>
 
-<h1 align="center">Pairspan</h1>
+<h1 align="center">Pairspan — Android Device Center</h1>
 
 <p align="center">Conecta tu teléfono Android a macOS o Windows mediante ADB inalámbrico.</p>
 

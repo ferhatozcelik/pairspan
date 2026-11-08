@@ -4,7 +4,7 @@
   </a>
 </p>
 
-<h1 align="center">Pairspan</h1>
+<h1 align="center">Pairspan — Android Device Center</h1>
 
 <p align="center">通过无线 ADB 将 Android 手机连接到 macOS 或 Windows。</p>
 

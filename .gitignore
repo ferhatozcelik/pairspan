@@ -21,3 +21,5 @@ web/backend.mjs
 
 .npm-cache/
 .electron-cache/
+target/
+desktop/node_modules/
