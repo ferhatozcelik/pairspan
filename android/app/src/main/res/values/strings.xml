@@ -93,4 +93,15 @@
     <string name="settings_client_id">Client ID (your computer)</string>
     <string name="status_disabled">Pairspan is turned off</string>
     <string name="step_system_usb">One-time step: connect this phone to your computer with a USB cable, open the Pairspan desktop app and tap “Grant permission”. Pairing continues on its own afterwards.</string>
+    <string name="update_section">Updates</string>
+    <string name="update_check">Check for updates</string>
+    <string name="update_checking">Checking for updates…</string>
+    <string name="update_available_title">Update available: %1$s</string>
+    <string name="update_up_to_date">Pairspan is up to date (v%1$s)</string>
+    <string name="update_download">Download &amp; Install</string>
+    <string name="update_downloading">Downloading: %1$d%%</string>
+    <string name="update_install">Install update</string>
+    <string name="update_install_permission">Enable install permission</string>
+    <string name="update_install_permission_hint">Please allow Pairspan to install apps in system settings.</string>
+    <string name="update_error">Update error: %1$s</string>
 </resources>

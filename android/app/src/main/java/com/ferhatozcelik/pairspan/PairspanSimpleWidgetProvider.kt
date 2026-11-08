@@ -7,6 +7,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.widget.RemoteViews
+import com.pairspan.app.R
 
 /**
  * Pairspan Ultra-Simple Home Screen Widget (`PairspanSimpleWidgetProvider`)

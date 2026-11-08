@@ -73,6 +73,12 @@ class MainActivity : ComponentActivity() {
     private var askedCamera = false
     private var appliedSystemAccess = false
 
+    private var updateStatus by mutableStateOf(UpdateStatus.IDLE)
+    private var updateInfo by mutableStateOf<UpdateReleaseInfo?>(null)
+    private var updateProgress by mutableStateOf(0)
+    private var updateError by mutableStateOf<String?>(null)
+    private var downloadedApk by mutableStateOf<java.io.File?>(null)
+
     private val adminResult = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { refreshPermissions() }
     private val notificationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { refreshPermissions() }
     private val cameraPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { refreshPermissions() }
@@ -91,8 +97,58 @@ class MainActivity : ComponentActivity() {
         applyKeepScreen()
         refreshPermissions()
         handleIntent(intent)
+        checkOtaUpdates(silent = true)
         setContent { PairspanUi() }
         resumeSession()
+    }
+
+    private fun checkOtaUpdates(silent: Boolean = false) {
+        if (updateStatus == UpdateStatus.CHECKING || updateStatus == UpdateStatus.DOWNLOADING) return
+        updateStatus = UpdateStatus.CHECKING
+        updateError = null
+        OtaUpdateManager.checkForUpdates(BuildConfig.VERSION_NAME) { status, info, err ->
+            runOnUiThread {
+                updateStatus = status
+                updateInfo = info
+                updateError = err
+                if (status == UpdateStatus.UP_TO_DATE && !silent) {
+                    notice = getString(R.string.update_up_to_date, BuildConfig.VERSION_NAME)
+                }
+            }
+        }
+    }
+
+    private fun startOtaDownload(info: UpdateReleaseInfo) {
+        updateStatus = UpdateStatus.DOWNLOADING
+        updateProgress = 0
+        updateError = null
+        OtaUpdateManager.downloadApk(
+            context = this,
+            info = info,
+            onProgress = { p -> runOnUiThread { updateProgress = p } },
+            onComplete = { file ->
+                runOnUiThread {
+                    downloadedApk = file
+                    updateStatus = UpdateStatus.READY_TO_INSTALL
+                    installDownloadedOta(file)
+                }
+            },
+            onError = { err ->
+                runOnUiThread {
+                    updateStatus = UpdateStatus.ERROR
+                    updateError = err
+                }
+            }
+        )
+    }
+
+    private fun installDownloadedOta(file: java.io.File) {
+        if (!OtaUpdateManager.canInstallDirectly(this)) {
+            notice = getString(R.string.update_install_permission_hint)
+            OtaUpdateManager.requestInstallPermission(this)
+        } else {
+            OtaUpdateManager.triggerInstall(this, file)
+        }
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -321,6 +377,38 @@ class MainActivity : ComponentActivity() {
                     IdRow(stringResource(R.string.settings_client_id), clientId.ifEmpty { "—" }, false)
                 }
                 Spacer(Modifier.height(20.dp))
+                SectionTitle(stringResource(R.string.update_section))
+                GroupCard {
+                    Row(
+                        Modifier.fillMaxWidth().clickable { checkOtaUpdates(false) }.padding(horizontal = 16.dp, vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text(stringResource(R.string.update_check), fontSize = 16.sp, fontWeight = FontWeight.Medium, color = Palette.OnSurface)
+                            val sub = when (updateStatus) {
+                                UpdateStatus.CHECKING -> stringResource(R.string.update_checking)
+                                UpdateStatus.UPDATE_AVAILABLE -> stringResource(R.string.update_available_title, updateInfo?.tagName.orEmpty())
+                                UpdateStatus.DOWNLOADING -> stringResource(R.string.update_downloading, updateProgress)
+                                UpdateStatus.READY_TO_INSTALL -> stringResource(R.string.update_install)
+                                UpdateStatus.ERROR -> stringResource(R.string.update_error, updateError ?: "")
+                                else -> stringResource(R.string.update_up_to_date, BuildConfig.VERSION_NAME)
+                            }
+                            Text(sub, fontSize = 13.sp, color = if (updateStatus == UpdateStatus.UPDATE_AVAILABLE) Palette.Primary else Palette.Gray, modifier = Modifier.padding(top = 3.dp))
+                        }
+                        if (updateStatus == UpdateStatus.CHECKING) {
+                            CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(20.dp))
+                        } else if (updateStatus == UpdateStatus.UPDATE_AVAILABLE) {
+                            Button(onClick = { updateInfo?.let(::startOtaDownload) }, modifier = Modifier.height(36.dp)) {
+                                Text(stringResource(R.string.update_download), fontSize = 12.sp)
+                            }
+                        } else if (updateStatus == UpdateStatus.READY_TO_INSTALL) {
+                            Button(onClick = { downloadedApk?.let(::installDownloadedOta) }, modifier = Modifier.height(36.dp)) {
+                                Text(stringResource(R.string.update_install), fontSize = 12.sp)
+                            }
+                        }
+                    }
+                }
+                Spacer(Modifier.height(20.dp))
                 SectionTitle(stringResource(R.string.settings_section_about))
                 GroupCard {
                     NavRow(stringResource(R.string.settings_share), stringResource(R.string.settings_share_d), true, ::shareApp)
@@ -449,7 +537,48 @@ class MainActivity : ComponentActivity() {
         Spacer(Modifier.height(14.dp))
     }
 
+    @Composable private fun OtaUpdateBanner() {
+        val info = updateInfo ?: return
+        if (updateStatus != UpdateStatus.UPDATE_AVAILABLE &&
+            updateStatus != UpdateStatus.DOWNLOADING &&
+            updateStatus != UpdateStatus.READY_TO_INSTALL) return
+
+        GroupCard {
+            Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                Text(
+                    stringResource(R.string.update_available_title, info.tagName),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Palette.Primary
+                )
+                Spacer(Modifier.height(4.dp))
+                val desc = if (info.releaseNotes.isNotBlank()) info.releaseNotes.lines().first() else stringResource(R.string.tagline)
+                Text(desc, style = MaterialTheme.typography.bodySmall, color = Palette.Gray)
+                Spacer(Modifier.height(10.dp))
+                when (updateStatus) {
+                    UpdateStatus.DOWNLOADING -> {
+                        LinearProgressIndicator(progress = { updateProgress / 100f }, modifier = Modifier.fillMaxWidth())
+                        Spacer(Modifier.height(4.dp))
+                        Text(stringResource(R.string.update_downloading, updateProgress), style = MaterialTheme.typography.bodySmall, color = Palette.Gray)
+                    }
+                    UpdateStatus.READY_TO_INSTALL -> {
+                        Button(onClick = { downloadedApk?.let(::installDownloadedOta) }, modifier = Modifier.fillMaxWidth()) {
+                            Text(stringResource(R.string.update_install))
+                        }
+                    }
+                    else -> {
+                        Button(onClick = { startOtaDownload(info) }, modifier = Modifier.fillMaxWidth()) {
+                            Text(stringResource(R.string.update_download))
+                        }
+                    }
+                }
+            }
+        }
+        Spacer(Modifier.height(14.dp))
+    }
+
     @Composable private fun HomeScreen() {
+        OtaUpdateBanner()
         GatewayStatus()
         GroupCard {
             Column(Modifier.fillMaxWidth().padding(18.dp)) {

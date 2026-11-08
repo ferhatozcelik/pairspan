@@ -44,6 +44,7 @@ pub struct UsbCandidate {
     pub model: String,
     pub transport_id: String,
     pub apk_installed: bool,
+    pub apk_version: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -177,10 +178,12 @@ fn inspect_adb_environment(canonical_port: u16) -> (Vec<UsbCandidate>, Vec<Dupli
                     reason: "Prior manual Wi-Fi ADB IP:port session (causes duplicate device conflict)".to_string(),
                 });
             } else if !id.contains(':') {
-                let apk_installed = if state == "device" {
-                    is_pairspan_apk_installed(id)
+                let (apk_installed, apk_version) = if state == "device" {
+                    let installed = is_pairspan_apk_installed(id);
+                    let ver = if installed { get_pairspan_installed_version(id) } else { None };
+                    (installed, ver)
                 } else {
-                    false
+                    (false, None)
                 };
                 usb.push(UsbCandidate {
                     serial: id.to_string(),
@@ -188,6 +191,7 @@ fn inspect_adb_environment(canonical_port: u16) -> (Vec<UsbCandidate>, Vec<Dupli
                     model,
                     transport_id,
                     apk_installed,
+                    apk_version,
                 });
             }
         }
@@ -195,38 +199,59 @@ fn inspect_adb_environment(canonical_port: u16) -> (Vec<UsbCandidate>, Vec<Dupli
     (usb, ghosts)
 }
 
-const ANDROID_PKG: &str = "com.ferhatozcelik.pairspan";
+const ANDROID_PKG: &str = "com.pairspan";
+const ANDROID_PKG_ALT: &str = "com.ferhatozcelik.pairspan";
 const GITHUB_RELEASES_API: &str = "https://api.github.com/repos/ferhatozcelik/pairspan/releases/latest";
 const FALLBACK_APK_URL: &str = "https://github.com/ferhatozcelik/pairspan/releases/download/v1.0.0/pairspan-android-1.0.0.apk";
 
 /// Checks whether the Pairspan Android APK is installed on the connected USB device
 fn is_pairspan_apk_installed(serial: &str) -> bool {
-    if let Ok(out) = run_adb(&["-s", serial, "shell", "pm", "path", ANDROID_PKG]) {
-        out.trim().starts_with("package:")
-    } else {
-        false
+    for pkg in &[ANDROID_PKG, ANDROID_PKG_ALT] {
+        if let Ok(out) = run_adb(&["-s", serial, "shell", "pm", "path", pkg]) {
+            if out.trim().starts_with("package:") {
+                return true;
+            }
+        }
     }
+    false
+}
+
+fn get_pairspan_installed_version(serial: &str) -> Option<String> {
+    for pkg in &[ANDROID_PKG, ANDROID_PKG_ALT] {
+        if let Ok(out) = run_adb(&["-s", serial, "shell", "dumpsys", "package", pkg]) {
+            for line in out.lines() {
+                let t = line.trim();
+                if let Some(rest) = t.strip_prefix("versionName=") {
+                    return Some(rest.trim().to_string());
+                }
+            }
+        }
+    }
+    None
+}
+
+fn is_version_newer(remote: &str, local: &str) -> bool {
+    let clean_r = remote.trim().trim_start_matches(|c| c == 'v' || c == 'V');
+    let clean_l = local.trim().trim_start_matches(|c| c == 'v' || c == 'V');
+    let r_parts: Vec<i32> = clean_r.split('.').filter_map(|s| s.parse().ok()).collect();
+    let l_parts: Vec<i32> = clean_l.split('.').filter_map(|s| s.parse().ok()).collect();
+    let max = r_parts.len().max(l_parts.len());
+    for i in 0..max {
+        let r = r_parts.get(i).copied().unwrap_or(0);
+        let l = l_parts.get(i).copied().unwrap_or(0);
+        if r > l { return true; }
+        if r < l { return false; }
+    }
+    false
 }
 
 /// Queries GitHub Releases (`ferhatozcelik/pairspan/releases/latest`) for the newest `.apk` asset URL,
 /// downloads it to the local Pairspan cache directory, and installs it onto the phone via `adb -s <serial> install -r`
-/// BEFORE granting permissions.
-fn ensure_apk_installed_from_github(serial: &str, core: &mut PairspanCore) -> Result<bool, String> {
-    if is_pairspan_apk_installed(serial) {
-        core.log(format!(
-            "[USB Setup] Pairspan Android APK ({}) is already installed on {}. Skipping download.",
-            ANDROID_PKG, serial
-        ));
-        return Ok(false);
-    }
-
-    core.log(format!(
-        "[USB Setup] Pairspan APK not found on {}. Fetching latest APK from GitHub Releases...",
-        serial
-    ));
-
+/// BEFORE granting permissions or during update.
+fn ensure_apk_installed_from_github(serial: &str, core: &mut PairspanCore, force: bool) -> Result<bool, String> {
     // 1. Resolve latest .apk download URL from GitHub Releases API
     let mut apk_url = FALLBACK_APK_URL.to_string();
+    let mut release_ver = "1.0.0".to_string();
     if let Ok(out) = Command::new("curl")
         .args([
             "-sL",
@@ -239,6 +264,9 @@ fn ensure_apk_installed_from_github(serial: &str, core: &mut PairspanCore) -> Re
         .output()
     {
         if let Ok(json) = serde_json::from_slice::<serde_json::Value>(&out.stdout) {
+            if let Some(tag) = json.get("tag_name").and_then(|t| t.as_str()) {
+                release_ver = tag.trim_start_matches(|c| c == 'v' || c == 'V').to_string();
+            }
             if let Some(assets) = json.get("assets").and_then(|a| a.as_array()) {
                 for asset in assets {
                     let name = asset.get("name").and_then(|n| n.as_str()).unwrap_or("");
@@ -253,23 +281,53 @@ fn ensure_apk_installed_from_github(serial: &str, core: &mut PairspanCore) -> Re
         }
     }
 
+    if is_pairspan_apk_installed(serial) && !force {
+        if let Some(installed_ver) = get_pairspan_installed_version(serial) {
+            if !is_version_newer(&release_ver, &installed_ver) {
+                core.log(format!(
+                    "[USB Setup] Pairspan Android APK (v{}) is already up-to-date on {}. Skipping download.",
+                    installed_ver, serial
+                ));
+                return Ok(false);
+            } else {
+                core.log(format!(
+                    "[USB Setup] Newer Pairspan APK available (v{} vs v{}). Updating {}...",
+                    release_ver, installed_ver, serial
+                ));
+            }
+        } else {
+            core.log(format!(
+                "[USB Setup] Pairspan Android APK ({}) is already installed on {}. Skipping download.",
+                ANDROID_PKG, serial
+            ));
+            return Ok(false);
+        }
+    } else {
+        core.log(format!(
+            "[USB Setup] Fetching latest Pairspan APK (v{}) from GitHub Releases for {}...",
+            release_ver, serial
+        ));
+    }
+
     let mut cache_dir = dirs::config_dir().unwrap_or_else(|| PathBuf::from("."));
     cache_dir.push("pairspan");
     let _ = fs::create_dir_all(&cache_dir);
-    let apk_path = cache_dir.join("pairspan-latest.apk");
+    let apk_path = cache_dir.join(format!("pairspan-{}.apk", release_ver));
     let apk_path_str = apk_path.to_string_lossy().to_string();
 
-    core.log(format!("[USB Setup] Downloading APK from {}...", apk_url));
-    let status = Command::new("curl")
-        .args(["-fL", "-o", &apk_path_str, &apk_url])
-        .status()
-        .map_err(|e| format!("Failed to invoke curl for APK download: {}", e))?;
+    if !apk_path.exists() {
+        core.log(format!("[USB Setup] Downloading APK from {}...", apk_url));
+        let status = Command::new("curl")
+            .args(["-fL", "-o", &apk_path_str, &apk_url])
+            .status()
+            .map_err(|e| format!("Failed to invoke curl for APK download: {}", e))?;
 
-    if !status.success() || !apk_path.exists() {
-        return Err(format!(
-            "Could not download APK from GitHub release ({}). Please check your internet connection.",
-            apk_url
-        ));
+        if !status.success() || !apk_path.exists() {
+            return Err(format!(
+                "Could not download APK from GitHub release ({}). Please check your internet connection.",
+                apk_url
+            ));
+        }
     }
 
     core.log(format!(
@@ -282,8 +340,8 @@ fn ensure_apk_installed_from_github(serial: &str, core: &mut PairspanCore) -> Re
     }
 
     core.log(format!(
-        "[USB Setup] Successfully installed Pairspan APK from GitHub Releases onto {}.",
-        serial
+        "[USB Setup] Successfully installed Pairspan APK (v{}) onto {}.",
+        release_ver, serial
     ));
     Ok(true)
 }
@@ -371,8 +429,8 @@ fn usb_authorize_and_pair(serial: String, state: State<'_, SharedCore>) -> Resul
     }
 
     // Step 1 (Before Permissions): Check if Pairspan APK is installed on the phone;
-    // if not installed, automatically fetch the latest APK from GitHub Releases and install via ADB.
-    match ensure_apk_installed_from_github(&serial, &mut core) {
+    // if not installed or outdated, automatically fetch the latest APK from GitHub Releases and install via ADB.
+    match ensure_apk_installed_from_github(&serial, &mut core, false) {
         Ok(_) => {}
         Err(err) => {
             core.log(format!("[USB Setup] APK auto-install warning: {}", err));
@@ -596,6 +654,12 @@ fn open_main_window(app: AppHandle) {
     }
 }
 
+#[tauri::command]
+fn force_update_apk(serial: String, state: State<'_, SharedCore>) -> Result<bool, String> {
+    let mut core = state.lock().unwrap();
+    ensure_apk_installed_from_github(&serial, &mut core, true)
+}
+
 fn main() {
     let core: SharedCore = Arc::new(Mutex::new(PairspanCore::load()));
 
@@ -659,6 +723,7 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             get_snapshot,
             usb_authorize_and_pair,
+            force_update_apk,
             purge_wifi_adb_conflicts,
             unpair_device,
             trigger_reconnect_now,

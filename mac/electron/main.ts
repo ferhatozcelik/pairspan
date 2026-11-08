@@ -78,6 +78,10 @@ app.whenReady().then(async () => {
     if (event.sender !== window?.webContents || typeof serial !== 'string') throw new Error('Invalid window.');
     return adb.grantSecureSettings(serial);
   });
+  ipcMain.handle('adb:install-apk', (event, serial: unknown) => {
+    if (event.sender !== window?.webContents || typeof serial !== 'string') throw new Error('Invalid window.');
+    return adb.installOrUpdateApk(serial, { force: true });
+  });
   ipcMain.handle('gateway:enabled', (event, enabled: unknown) => {
     if (event.sender !== window?.webContents || typeof enabled !== 'boolean') throw new Error('Invalid window.');
     setEnabled(enabled);

@@ -485,7 +485,7 @@ body.widget-mode .widget-shell{display:flex}
     } else {
       usbEl.innerHTML = snap.usb_candidates.map(function(u) {
         var apkTag = u.apk_installed
-          ? '<span class="tag-pill">Hazır</span>'
+          ? (u.apk_version ? '<span class="tag-pill">v' + u.apk_version + '</span>' : '<span class="tag-pill">Hazır</span>')
           : '<span class="tag-pill warn">Otomatik Kurulacak</span>';
         var btnLabel = u.apk_installed ? 'Eşleştir' : 'Kur ve Eşleştir';
         return '<div class="device-row">' +

@@ -5,3 +5,43 @@
 .stream-controls { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0; }
 .stream-metrics div { display:flex; justify-content:space-between; gap:8px; font-size:12px; padding:3px 0; }
 .stream-metrics dd { margin:0; text-align:right; overflow-wrap:anywhere; }
+.button-row{display:flex;gap:8px;margin-top:10px}
+.button-row .primary,.button-row .secondary{margin-top:0;flex:1}
+.secondary{background:#ebf2ed;border:1px solid #c9d8ce;border-radius:8px;color:#183026;padding:9px 12px;font-weight:700;cursor:pointer;width:100%}
+.secondary:disabled{opacity:.5;cursor:default}
+.apk-badge{font-size:11px;color:#2b4a3a;background:#eef5f0;padding:2px 6px;border-radius:4px;display:inline-block;margin-top:3px}
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+.loading-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #c9d8ce;
+  border-top-color: #197653;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+  vertical-align: middle;
+}
+.loading-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f0f7f3;
+  border: 1px solid #d2e6d9;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: #197653;
+  font-weight: 500;
+}
+.header-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #197653;
+  background: #edf6f1;
+  padding: 5px 10px;
+  border-radius: 20px;
+}

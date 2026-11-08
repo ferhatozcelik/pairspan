@@ -30,8 +30,16 @@ export interface GatewayState {
   command: CommandState;
 }
 
-export interface UsbDevice { serial: string; state: 'device' | 'unauthorized' | 'offline'; model: string }
-export interface GrantResult { ok: boolean; message: string }
+export interface UsbDevice {
+  serial: string;
+  state: 'device' | 'unauthorized' | 'offline';
+  model: string;
+  apkInstalled?: boolean;
+  apkVersion?: string;
+  latestVersion?: string;
+  hasUpdate?: boolean;
+}
+export interface GrantResult { ok: boolean; message: string; version?: string }
 
 export interface StreamSignal { deviceId: string; event: string; payload: Record<string, any> }
 export interface PairspanApi {
@@ -40,6 +48,7 @@ export interface PairspanApi {
   onStreamSignal(callback: (value: StreamSignal) => void): () => void;
   usbDevices(): Promise<UsbDevice[]>;
   grantPermission(serial: string): Promise<GrantResult>;
+  installApk(serial: string): Promise<GrantResult>;
   gatewayState(): Promise<GatewayState>;
   copyPairCode(): Promise<void>;
   copyAdbProxy(deviceId: string): Promise<void>;

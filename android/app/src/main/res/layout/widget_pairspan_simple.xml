@@ -3,9 +3,10 @@
     android:id="@+id/widget_root"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="#FAF4EC"
+    android:background="@drawable/widget_bg"
     android:orientation="horizontal"
-    android:padding="12dp"
+    android:padding="16dp"
+    android:clipToOutline="true"
     android:gravity="center_vertical">
 
     <LinearLayout
@@ -20,15 +21,16 @@
             android:layout_height="wrap_content"
             android:text="Pairspan · Tekil ADB"
             android:textColor="#161616"
-            android:textSize="13sp"
+            android:textSize="14sp"
             android:textStyle="bold" />
 
         <TextView
             android:id="@+id/widget_status"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
             android:text="Bağlı · Auto-Reconnect ON"
-            android:textColor="#FA5424"
+            android:textColor="#1C7655"
             android:textSize="12sp"
             android:textStyle="bold" />
     </LinearLayout>
@@ -36,7 +38,12 @@
     <Button
         android:id="@+id/widget_btn_action"
         android:layout_width="wrap_content"
-        android:layout_height="36dp"
+        android:layout_height="38dp"
+        android:background="@drawable/widget_btn_bg"
+        android:textColor="#FFFFFF"
         android:text="Bağlan"
-        android:textSize="11sp" />
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
+        android:textSize="12sp"
+        android:textStyle="bold" />
 </LinearLayout>

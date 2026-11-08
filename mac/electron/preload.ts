@@ -14,6 +14,7 @@ contextBridge.exposeInMainWorld('pairspan', {
   copyText: (value: string) => ipcRenderer.invoke('gateway:copy', value),
   usbDevices: () => ipcRenderer.invoke('adb:devices'),
   grantPermission: (serial: string) => ipcRenderer.invoke('adb:grant', serial),
+  installApk: (serial: string) => ipcRenderer.invoke('adb:install-apk', serial),
   setEnabled: (enabled: boolean) => ipcRenderer.invoke('gateway:enabled', enabled),
   runCommand: (deviceId: string, command: string) => ipcRenderer.invoke('gateway:command', deviceId, command),
   onGatewayState: (callback: (value: unknown) => void) => {

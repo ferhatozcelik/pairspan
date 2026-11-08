@@ -1,7 +1,7 @@
 {
   "name": "pairspan-mac",
   "productName": "Pairspan",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "description": "Wireless ADB bridge between a Mac and an Android phone.",
   "author": "Ferhat \u00d6z\u00e7elik",

@@ -93,4 +93,15 @@
     <string name="settings_client_id">Client ID (bilgisayarın)</string>
     <string name="status_disabled">Pairspan kapalı</string>
     <string name="step_system_usb">Tek seferlik adım: telefonu USB kablosuyla bilgisayara bağla, Pairspan masaüstü uygulamasında “İzin ver”e dokun. Sonrasında eşleştirme kendiliğinden devam eder.</string>
+    <string name="update_section">Güncellemeler</string>
+    <string name="update_check">Güncellemeleri kontrol et</string>
+    <string name="update_checking">Güncellemeler denetleniyor…</string>
+    <string name="update_available_title">Yeni sürüm mevcut: %1$s</string>
+    <string name="update_up_to_date">Pairspan güncel (v%1$s)</string>
+    <string name="update_download">İndir ve Güncelle</string>
+    <string name="update_downloading">İndiriliyor: %%%1$d</string>
+    <string name="update_install">Güncellemeyi yükle</string>
+    <string name="update_install_permission">Yükleme iznini aç</string>
+    <string name="update_install_permission_hint">Lütfen ayarlardan Pairspan için uygulama yükleme iznini etkinleştirin.</string>
+    <string name="update_error">Güncelleme hatası: %1$s</string>
 </resources>
