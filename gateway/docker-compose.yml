@@ -1,0 +1,19 @@
+# One container is enough: the gateway keeps no pairing state, so restarts lose nothing but live sockets.
+services:
+  pairspan:
+    image: pairspan-gateway:latest
+    build:
+      context: ..
+      dockerfile: gateway/Dockerfile
+    container_name: pairspan
+    restart: always
+    env_file:
+      - ./gateway.env # GATEWAY_TOKEN=..., optional ALLOWED_ORIGINS=...
+    environment:
+      TRUST_PROXY: "1" # Port is loopback-only; TLS terminates at the trusted reverse proxy.
+      LOG_LEVEL: info
+    ports:
+      - "127.0.0.1:16200:8080"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]

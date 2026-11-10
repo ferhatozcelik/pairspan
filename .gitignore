@@ -24,3 +24,4 @@ web/backend.mjs
 target/
 desktop/node_modules/
 *.apk
+gateway/gateway.env
