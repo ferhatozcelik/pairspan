@@ -1,7 +1,0 @@
-node_modules
-dist
-server.mjs
-backend.mjs
-test
-temp.env
-*.tar

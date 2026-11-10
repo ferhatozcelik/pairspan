@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      # The desktop app needs WebKitGTK on Linux; it is built in release.yml on macOS.
+      - run: cargo test -p pairspan-gateway -p pairspan-core -p pairspan-cli
+
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: gradle
+      - uses: android-actions/setup-android@v3
+      - name: Unit tests (crypto vectors shared with Rust) and debug build
+        working-directory: apps/android
+        run: ./gradlew :app:testDebugUnitTest :app:assembleDebug --no-daemon
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build

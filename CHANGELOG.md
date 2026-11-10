@@ -1,36 +1,20 @@
 # Changelog
 
-## 1.0.0 — WebRTC update (2026-10-15)
+All notable changes to Pairspan are documented here. This project uses [semantic versions](https://semver.org/).
 
-- Add user-consented native Android H.264 screen streaming and direct Electron WebRTC rendering (720p / 30 FPS target).
-- Preserve ADB device management, commands and APK installation, with bounded signaling and command queues.
-- Add authenticated reconnect, UDP ICE negotiation/recovery, rotation handling, diagnostics and bounded statistics export.
-- Android versionCode is 6; public version remains 1.0.0. Upgrade all components and pair devices again.
-- No database or TURN dependency. Restrictive NATs can prevent direct connectivity.
-- Builds and automated integration/synthetic renderer tests pass; real-device 30-minute, thermal and cross-network validation is still pending.
+## [1.0.0] — 2026-11-10
 
-
-All notable changes to Pairspan are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses [semantic versions](https://semver.org/spec/v2.0.0.html).
-
-## [1.0.0] - 2026-10-08
-
-First public release.
+A clean start. Earlier builds (Electron desktop app, Node gateway, protocol v2) are not compatible; pair your phones again.
 
 ### Added
+- Rust gateway: signature-authenticated clients, pairing rooms that never see the pair code, mutual-trust binary routing, backpressure, `/health` and Prometheus `/metrics`. Also serves the website; one 5.7 MB container.
+- End-to-end encryption between computer and phone: P-256 handshake (ephemeral + static ECDH, pair-code PSK on first pairing), HKDF-SHA256, AES-256-GCM with replay protection. Spec in `docs/protocol.md`.
+- Desktop app (Tauri) with menu-bar icon, QR pairing, USB first-time setup (install the Android app, enable wireless ADB) and a local automation socket.
+- `pairspan` CLI bundled in the app: devices, pair, shell, adb, tap, click, swipe, text, key, elements, dump, screenshot, launch, stop, install, apps, current, logcat, usb.
+- `pairspan mcp`: MCP server for Claude, Cursor and VS Code, with `--read-only`.
+- Every paired phone appears as an adb device (`127.0.0.1:47100+`).
+- Android app redesigned with the website palette, light and dark themes, edge-to-edge system bars and a new adaptive/themed icon.
+- `install.sh` (release download, `--source`, `--link-only`, `--uninstall`) and Next.js website with docs in English and Turkish.
 
-- Android app (`com.pairspan`) for gateway pairing, wireless ADB trust, and the phone side of the ADB relay.
-- Desktop Electron tray app that shows a six-digit code and QR, then connects local `adb` to `127.0.0.1:44755`. macOS: `pairspan-mac-1.0.0.dmg` (universal, not notarized). Windows: `pairspan-windows-1.0.0.exe` (x64 installer, not code-signed, includes `adb.exe`).
-- Node.js WebSocket gateway with `/ws`, `GET /health`, single-use pairing codes, and an optional shared token.
-- One `pairspan` container serves the landing page, `/p/` pairing redirect, `/ws`, and `/health`.
-- Open-source docs: architecture, protocol, component guides, security, and contributing notes.
-
-### Changed
-
-- Android ADB client and QR scanner are vendored in the app. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
-- Screenshots and ADB screen mirroring are allowed.
-
-### Not in this release
-
-- No iOS app. Pairspan 1.0.0 does not include an iPhone or iPad client.
-
-[1.0.0]: https://github.com/ferhatozcelik/pairspan/releases/tag/v1.0.0
+### Removed
+- Electron app, Node gateway, WebRTC screen streaming, embedded Android ADB client, accessibility/notification/device-admin stubs and privileged permissions (`DUMP`, `READ_LOGS`, `WRITE_SECURE_SETTINGS`, …).

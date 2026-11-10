@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <pattern id="dots" width="28" height="28" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#161616" fill-opacity=".07"/></pattern>
+    <linearGradient id="ember" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fc997b"/><stop offset="1" stop-color="#fa5424"/></linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="#faf4ec"/>
+  <rect width="1200" height="630" fill="url(#dots)"/>
+  <g transform="translate(80 80) scale(.09)">
+    <rect width="1024" height="1024" rx="228" fill="#161616"/>
+    <path d="M475 384l-93 93a158 158 0 0 0 223 223l71-71" fill="none" stroke="#fffef7" stroke-width="108" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M549 640l93-93a158 158 0 0 0-223-223l-71 71" fill="none" stroke="url(#ember)" stroke-width="108" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="190" y="138" font-family="Helvetica Neue, Helvetica, Arial" font-size="40" font-weight="800" letter-spacing="-1.8" fill="#161616">Pairspan</text>
+  <text x="80" y="315" font-family="Helvetica Neue, Helvetica, Arial" font-size="92" font-weight="700" letter-spacing="-5" fill="#161616">Your Android phone,</text>
+  <rect x="74" y="352" width="358" height="104" rx="18" fill="#fa5424" transform="rotate(-1.5 274 404)"/>
+  <text x="96" y="432" font-family="Helvetica Neue, Helvetica, Arial" font-size="92" font-weight="700" letter-spacing="-5" fill="#fffef7">one line</text>
+  <text x="462" y="432" font-family="Helvetica Neue, Helvetica, Arial" font-size="92" font-weight="700" letter-spacing="-5" fill="#161616">away.</text>
+  <text x="80" y="540" font-family="Menlo, monospace" font-size="27" fill="#5c574f">adb · CLI · MCP for AI agents · end-to-end encrypted</text>
+</svg>

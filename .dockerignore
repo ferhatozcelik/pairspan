@@ -1,0 +1,10 @@
+.git
+target
+**/node_modules
+apps/android
+apps/desktop/src-tauri
+apps/web/.next
+apps/web/out
+temp.env
+*.apk
+.DS_Store

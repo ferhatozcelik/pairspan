@@ -1,0 +1,19 @@
+[package]
+name = "pairspan-cli"
+version = "1.0.0"
+description = "pairspan: control Android phones paired with the Pairspan app, from the shell or as an MCP server"
+authors = ["Ferhat Özçelik"]
+license = "MIT"
+edition = "2021"
+
+[[bin]]
+name = "pairspan"
+path = "src/main.rs"
+
+[dependencies]
+pairspan-core = { path = "../core" }
+clap = { version = "4", features = ["derive"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "io-std", "io-util", "time", "process"] }
+serde_json = "1"
+anyhow = "1"
+base64 = "0.22"

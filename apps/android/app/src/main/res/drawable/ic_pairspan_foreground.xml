@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Adaptive icon foreground: the Pairspan link mark, scaled into the 66dp safe zone. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="1024" android:viewportHeight="1024">
+    <group android:pivotX="512" android:pivotY="512" android:scaleX="1.18" android:scaleY="1.18">
+        <path android:pathData="M475,384 l-93,93 a158,158 0,0 0,223 223 l71,-71"
+            android:strokeColor="@color/off_white" android:strokeWidth="108"
+            android:strokeLineCap="round" android:strokeLineJoin="round" />
+        <path android:pathData="M549,640 l93,-93 a158,158 0,0 0,-223 -223 l-71,71"
+            android:strokeWidth="108" android:strokeLineCap="round" android:strokeLineJoin="round">
+            <aapt:attr name="android:strokeColor">
+                <gradient android:type="linear" android:startX="380" android:startY="320"
+                    android:endX="700" android:endY="640"
+                    android:startColor="@color/ember_soft" android:endColor="@color/ember" />
+            </aapt:attr>
+        </path>
+        <path android:pathData="M512,478 a34,34 0,1 1,0 68 a34,34 0,1 1,0 -68" android:fillColor="@color/ember" />
+    </group>
+</vector>

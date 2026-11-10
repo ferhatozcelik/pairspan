@@ -1,265 +1,77 @@
 <p align="center">
-  <a href="https://pairspan.ferhatozcelik.com">
-    <img src="web/assets/pairspan-icon.png" alt="Pairspan" width="100">
-  </a>
+  <a href="https://pairspan.ferhatozcelik.com/tr/"><img src="assets/brand/icon.svg" alt="Pairspan" width="96"></a>
 </p>
 
-<h1 align="center">Pairspan — Android Device Center</h1>
+<h1 align="center">Pairspan</h1>
 
-<p align="center">Android telefonunuzu kablosuz olarak macOS, Windows veya Linux’a bağlayın ve Menü Çubuğu (Status Bar) Widget’ı ile bağlı cihazlarınızı tek tıkla yönetin.</p>
-
-<p align="center"><strong>Bir kez eşleştirin. Kablosuz bağlanın. Kolayca dağıtın.</strong></p>
+<p align="center"><b>Android telefonun, bir satır uzağında.</b><br>
+Bir kez QR kodla eşleştir; sonra telefonu terminalden, scriptlerden ya da yapay zekâ ajanlarından yönet —<br>
+Wi-Fi veya mobil veri üzerinden, uçtan uca şifreli.</p>
 
 <p align="center">
-  <a href="https://github.com/ferhatozcelik/pairspan/releases/tag/v1.0.0"><img src="https://img.shields.io/badge/release-v1.1.0-fa5424" alt="Release v1.1.0"></a>
-  <img src="https://img.shields.io/badge/platforms-macOS%20%7C%20Windows%20%7C%20Linux%20%7C%20Android-161616" alt="Platforms: macOS, Windows, Linux and Android">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-161616" alt="MIT license"></a>
+  <a href="https://pairspan.ferhatozcelik.com/tr/">Web sitesi</a> ·
+  <a href="https://pairspan.ferhatozcelik.com/docs/">Dokümanlar</a> ·
+  <a href="https://github.com/ferhatozcelik/pairspan/releases/latest">İndir</a> ·
+  <a href="README.md">English</a>
 </p>
-
-<p align="center">
-  <a href="https://pairspan.ferhatozcelik.com">Web sitesi</a> ·
-  <a href="https://github.com/ferhatozcelik/pairspan/releases/tag/v1.0.0">İndir</a> ·
-  <a href="#setup-guide">Kurulum rehberi</a> ·
-  <a href="CONTRIBUTING.md">Katkıda bulun</a>
-</p>
-
-<p align="center">
-  <a href="README.md">English</a> ·
-  <a href="README.tr.md">Türkçe</a> ·
-  <a href="README.de.md">Deutsch</a> ·
-  <a href="README.es.md">Español</a> ·
-  <a href="README.fr.md">Français</a> ·
-  <a href="README.pt-BR.md">Português (Brasil)</a> ·
-  <a href="README.zh-CN.md">简体中文</a> ·
-  <a href="README.ja.md">日本語</a>
-</p>
-
-<p align="center">
-  <strong>Projeyi destekleyin</strong><br>
-  <a href="https://buymeacoffee.com/ferhatozcelik">Buy Me a Coffee</a> ·
-  <a href="https://thanks.dev/donations">thanks.dev</a>
-</p>
-
-<br>
 
 <table align="center">
   <tr>
-    <th align="center">Android · Bağlı</th>
-    <th align="center">Android · Eşleştirme</th>
-    <th align="center">macOS · QR kodu ve belirteç</th>
-  </tr>
-  <tr>
-    <td align="center" valign="top"><img src="docs/screenshots/android-connected.png" alt="Android · Bağlı" width="200"></td>
-    <td align="center" valign="top"><img src="docs/screenshots/android-pairing.png" alt="Android · Eşleştirme" width="200"></td>
-    <td align="center" valign="top"><img src="docs/screenshots/macos-pairing.png" alt="macOS · QR kodu ve belirteç" width="300"></td>
+    <td><img src="docs/screenshots/desktop.png" alt="Pairspan masaüstü uygulaması" width="460"></td>
+    <td><img src="docs/screenshots/android-light.png" alt="Android'de Pairspan" width="190"></td>
+    <td><img src="docs/screenshots/android-dark.png" alt="Android'de Pairspan, koyu tema" width="190"></td>
   </tr>
 </table>
 
-## İndir
+## Ne yapar
 
-[Sürüm 1.0.0](https://github.com/ferhatozcelik/pairspan/releases/tag/v1.0.0): macOS, Windows ve Android.
+- **Her yerden adb.** Eşleşen her telefon `adb devices`, Android Studio ve tüm adb araçlarında `127.0.0.1:47100` olarak görünür; telefon başka bir ağda olabilir.
+- **`pairspan` CLI.** Dokun, yaz, kaydır, öğe bul, ekran görüntüsü al, uygulama ve log: `pairspan click "Giriş yap"`.
+- **Yapay zekâ ajanları için MCP.** `claude mcp add pairspan -- pairspan mcp` ile Claude, Cursor veya VS Code telefonu görüp kullanabilir. `--read-only` yalnızca bakmaya izin verir.
+- **Uçtan uca şifreli.** Bilgisayar ile telefon arasında P-256 el sıkışması ve AES-256-GCM; gateway yalnızca şifreli veriyi yönlendirir, eşleştirme kodunu hiç görmez.
+- **Kendi sunucunda çalıştırılabilir.** Gateway ve web sitesi durumsuz, 5,7 MB'lık tek bir container.
 
-## Hızlı Kurulum (macOS)
-
-[`install.sh`](install.sh) betiğini çalıştırarak **Pairspan — Android Device Center** uygulamasını (`/Applications/Pairspan.app`) ve Menü Çubuğu (Status Bar) Widget’ını tek komutla derleyip kurabilirsiniz:
-
-```bash
-chmod +x install.sh
-./install.sh
-```
-
-- **Menü Çubuğu (Status Bar) Widget’ı:** Üst menü çubuğundaki Pairspan simgesine tıkladığınızda doğrudan bağlı Android cihazlarınızı listeleyen Status Bar Widget’ı açılır.
-- **Otomatik GitHub APK Kurulumu:** İlk USB eşleştirmesinde telefonda Pairspan APK’si yüklü değilse GitHub Releases üzerinden en güncel sürümü otomatik indirip kurar ve izinleri tanımlar.
-
-## Klasörler
-
-| Bileşen | Klasör |
-| --- | --- |
-| Masaüstü Uygulaması ve Status Bar Widget (Rust / Tauri v2) | [`desktop/`](desktop/) |
-| Rust Gateway Servisi (Axum + Tokio) | [`gateway/`](gateway/) |
-| Android Uygulaması ve Widget | [`android/`](android/) |
-| Electron Uygulaması (macOS ve Windows) | [`mac/`](mac/) |
-| Web ve Aktarım Sunucusu | [`web/`](web/) |
+## Kurulum
 
 ```bash
-./install.sh                                # Tek komutla macOS kurulumu (/Applications/Pairspan.app)
-cargo run -p pairspan-desktop               # Rust Masaüstü Uygulaması + Status Bar Widget
-cargo run -p pairspan-gateway               # Rust Gateway Servisi
-cd web && npm install && npm start
-cd mac && npm install && npm start
-cd android && ./gradlew :app:assembleDebug
+curl -fsSL https://pairspan.ferhatozcelik.com/install.sh | sh
 ```
 
-<a id="setup-guide"></a>
-
-## Kurulum rehberi
-
-Pairspan, masaüstü uygulaması (macOS veya Windows) ve Android uygulamasından oluşur. İkisi de `https://pairspan.ferhatozcelik.com` adresindeki ağ geçidine bağlanır; telefon ve bilgisayarın aynı ağda olması gerekmez. Bir bilgisayara birden fazla telefon bağlanabilir.
-
-### 1. Masaüstü uygulamasını yükleyin
-
-**macOS**
-
-1. [Sürüm sayfasından](https://github.com/ferhatozcelik/pairspan/releases/tag/v1.0.0) `pairspan-mac-1.0.0.dmg` dosyasını indirin ve Pairspan’i Uygulamalar klasörüne sürükleyin.
-2. Derleme Apple tarafından noter onaylı değildir. macOS ilk açılışı engellerse uygulamaya sağ tıklayıp **Aç** seçeneğini kullanın.
-3. Pairspan menü çubuğunda çalışır. Eşleştirme belirtecini ve QR kodunu görmek için simgesine tıklayın.
-4. `adb` uygulamayla birlikte gelir; ayrıca yüklemeniz gerekmez.
-
-**Windows**
-
-1. Aynı sürüm sayfasından `pairspan-windows-1.0.0.exe` dosyasını indirin ve çalıştırın.
-2. Yükleyici kod imzalı değildir. SmartScreen uyarırsa **Ek bilgi → Yine de çalıştır** seçeneğini kullanın.
-3. Pairspan sistem tepsisinde çalışır. Eşleştirme belirtecini ve QR kodunu görmek için simgesine tıklayın.
-4. `adb.exe` uygulamayla birlikte gelir.
-
-Pencerenin üstündeki anahtarla veya tepsi menüsündeki **Enabled** seçeneğiyle Pairspan’i açıp kapatabilirsiniz. Kapalıyken telefonlar bağlanamaz.
-
-### 2. Android uygulamasını yükleyin
-
-1. Sürüm sayfasından APK’yi indirip yükleyin. İstenirse tarayıcınıza veya dosya yöneticinize yükleme izni verin. Android 8.0 veya üzeri; kablosuz hata ayıklama için Android 11 veya üzeri gerekir.
-2. Pairspan’i açın; istendiğinde bildirim ve kamera izinlerini verin. Kamera yalnızca QR kodu taramak için kullanılır.
-3. **Ayarlar → Telefon hakkında** bölümünde **Yapım numarası** üzerine yedi kez dokunun. **Geliştirici seçenekleri** bölümünden **USB hata ayıklama** ve varsa **Kablosuz hata ayıklama** seçeneklerini açın.
-
-### 3. Sistem erişimi verin (bir kez)
-
-Pairspan, kendi erişilebilirlik ve bildirim hizmetlerini ve kablosuz ADB’yi Ayarlar’a yönlendirmeden açabilir. Bunun için bilgisayardan `WRITE_SECURE_SETTINGS` izni verilmelidir. Masaüstü uygulaması bunu sizin için yapar:
-
-1. USB hata ayıklama açık ve Pairspan yüklü telefonunuzu USB kablosuyla bilgisayara bağlayın.
-2. Masaüstündeki **One-time phone permission** bölümünde **Find USB phones** düğmesine tıklayın.
-3. Telefonda USB hata ayıklamaya izin verme isteği çıkarsa onaylayın ve yeniden tarayın.
-4. Telefonunuzun altındaki **Grant permission** düğmesine tıklayın. Uygulama, kendi `adb` aracıyla şu komutları çalıştırır ve kablosuz bağlantı için ADB’yi 5555 portuna geçirir:
+`Pairspan.app`'i (menü çubuğu) kurar ve içindeki `pairspan` komutunu PATH'e bağlar. Ardından telefona `pairspan-android-1.0.0.apk`'yı kur (ya da telefon USB'deyken masaüstü uygulamasında **Install app**'e tıkla), **Pair a phone**'a tıkla, kodu tara ve USB üzerinden bir kez **Enable wireless ADB**'ye tıkla.
 
 ```bash
-adb shell pm grant com.pairspan android.permission.WRITE_SECURE_SETTINGS
-adb tcpip 5555
+pairspan devices
+pairspan launch com.android.settings
+pairspan click "Ağ ve internet"
+pairspan screenshot ekran.png
+claude mcp add pairspan -- pairspan mcp
 ```
 
-5. Telefonda **İzin ver** seçeneğine dokunun ve **Her zaman izin ver** kutusunu işaretleyin. Komut yazmanız gerekmez.
+Ayrıntılı rehber: [pairspan.ferhatozcelik.com/docs](https://pairspan.ferhatozcelik.com/docs/).
 
-Notlar:
+## Repo yapısı
 
-- İzin, Pairspan kaldırılana kadar geçerlidir. 5555 portu ayarı telefon yeniden başlatılana kadar sürer; yeniden başlatma sonrasında tekrar **Grant permission** düğmesine tıklayın.
-- Güvenlik hatası alırsanız Geliştirici seçeneklerinde **USB hata ayıklama (Güvenlik ayarları)** seçeneğini açıp yeniden deneyin (bazı Xiaomi/Redmi/POCO telefonlar).
-- Komutu herhangi bir `adb` ile kendiniz de çalıştırabilirsiniz. Android uygulaması komutu **Getting ready → System access** altında **Copy command** düğmesiyle gösterir.
-- Kablosuz hata ayıklama olmayan telefonlarda USB üzerinden bir kez `adb tcpip 5555` çalıştırın. Pairspan bu portu kullanır.
+| Klasör | İçerik |
+|---|---|
+| `crates/gateway` | Rust relay: kimlik doğrulama, eşleştirme odaları, binary yönlendirme, `/health`, `/metrics`, web sitesini sunar |
+| `crates/core` | Rust PC ajanı: kimlik, el sıkışma, şifreli oturumlar, ADB tüneli, otomasyon, yerel JSON-RPC |
+| `crates/cli` | `pairspan` komutu ve MCP sunucusu (yalnızca uygulamayla konuşur) |
+| `apps/desktop` | Tauri uygulaması (menü çubuğu + pencere); CLI ve adb içinde gelir |
+| `apps/android` | Kotlin/Compose uygulaması; telefonun adbd'sine köprü |
+| `apps/web` | Next.js web sitesi ve dokümanlar (statik export) |
+| `docs/` | [`protocol.md`](docs/protocol.md), [`design.md`](docs/design.md), ortak şifreleme test vektörleri |
 
-<a id="pair"></a>
-
-### 4. Eşleştirin
-
-1. Masaüstü uygulamasının açık olduğundan ve **Connected to the Pairspan service** mesajını gösterdiğinden emin olun.
-2. Android uygulamasında **Scan QR code** düğmesine dokunup masaüstündeki kodu tarayın veya eşleştirme belirtecini yazın.
-3. Telefon, masaüstünde **Connected devices** altında **Device ID** ve bilgisayarın **Client ID** bilgileriyle görünür. Aynı kimlikler Android uygulamasının **Settings** bölümündedir.
-4. Başka bir telefon eklemek için yeni kodla eşleştirmeyi tekrarlayın. Kullanılan kod hemen yenilenir.
-
-### 5. Kendi sunucunuzda barındırın
-
-Masaüstü ve Android uygulamaları birbirlerine doğrudan ADB açmaz; ikisi de [`web/`](web/) içindeki ağ geçidine bağlanır. Genel adres `https://pairspan.ferhatozcelik.com`’dur. Kendi sunucunuzda bu süreci başlatın ve iki uygulamayı da aynı URL ve belirteçle derleyin.
-
-### Gereksinimler
-
-- Node.js 22 veya Docker.
-- Ağ geçidi internete açıksa TLS destekli bir alan adı. İstemciler `https://` ve WebSocket için `wss://…/ws` kullanır.
-- Sunucu, masaüstü ve Android uygulamalarında aynı `GATEWAY_TOKEN`.
-
-Oturumlar bellekte tutulur ve süreç yeniden başlatıldığında silinir. Ağ geçidi `adb` çalıştırmaz; masaüstü uygulaması yalnızca `127.0.0.1` üzerinde çalıştırır.
-
-### Ortam değişkenleri
-
-`web/.env.example`, `mac/.env.example` ve `android/.env.example` aynı iki satırı kullanır. Genel URL’yi telefon ve bilgisayarların ulaşabildiği adres olarak ayarlayın. Git’te belirteci boş bırakın.
-
-```text
-GATEWAY_PUBLIC_URL=https://pairspan.example.com
-GATEWAY_TOKEN=
-```
-
-`GATEWAY_PUBLIC_URL`, eşleştirme QR kodlarına yazılır. `GATEWAY_TOKEN`, her `hello` mesajıyla gönderilir. Sunucu belirteci boşsa `/ws` adresine ulaşabilen herkes katılabilir. Sunucuyu internete açmadan önce uzun, rastgele bir belirteç oluşturun:
+## Geliştirme
 
 ```bash
-openssl rand -hex 32
+cargo test -p pairspan-gateway -p pairspan-core -p pairspan-cli
+(cd apps/android && ./gradlew :app:testDebugUnitTest :app:assembleDebug)
+npm install && npm run build      # web sitesi → apps/web/out
+npm run desktop                   # CLI ve adb gömülü Pairspan.app
+./install.sh --source             # bu klasörden derleyip kur
+docker build -t pairspan:latest . # gateway + web sitesi imajı
 ```
-
-Belirteci commit etmeyin. Sürecin ortam değişkenlerine veya Docker için `web/temp.env` dosyasına koyun. `temp.env` depoya dahil değildir.
-
-### Node ile çalıştırın
-
-```bash
-cd web
-npm install
-export GATEWAY_PUBLIC_URL=https://pairspan.example.com
-export GATEWAY_TOKEN='paste-the-token'
-npm start
-```
-
-Süreç `0.0.0.0:3000` adresini dinler; açılış sayfasını, `/p/`, WebSocket `/ws` ve `GET /health` uç noktalarını sunar.
-
-```bash
-curl -fsS http://127.0.0.1:3000/health
-```
-
-Sağlıklı süreç `{"ok":true,"service":"pairspan",...}` döndürür.
-
-### Docker ile çalıştırın
-
-`web/` klasöründe:
-
-```bash
-docker build -t pairspan:latest .
-```
-
-`web/temp.env` dosyasını oluşturun:
-
-```text
-NODE_ENV=production
-GATEWAY_PUBLIC_URL=https://pairspan.example.com
-GATEWAY_TOKEN=paste-the-token
-```
-
-[`web/docker-compose.yml`](web/docker-compose.yml), bu dosyayı okur ve bilgisayardaki `127.0.0.1:16200` adresini konteynerin `3000` portuna yönlendirir.
-
-```bash
-docker compose up -d
-curl -fsS http://127.0.0.1:16200/health
-```
-
-`127.0.0.1:16200` önüne TLS destekli ters vekil sunucu koyun. `/ws` için WebSocket yükseltmelerini iletin. Genel adresi de kontrol edin:
-
-```bash
-curl -fsS https://pairspan.example.com/health
-```
-
-### Uygulamaları ağ geçidinize yönlendirin
-
-Aynı URL ve belirteci `mac/.env.example` ve `android/.env.example` dosyalarına yazıp yeniden derleyin. Masaüstü uygulaması `.env.example` dosyasını açılışta okur; Android uygulaması iki değeri derleme sırasında APK’ye ekler.
-
-```bash
-cd mac && npm install && npm start
-cd android && ./gradlew :app:assembleDebug
-```
-
-Farklı belirteçle derlenen istemci reddedilir. QR kodunu taramadan önce masaüstünde **Connected to the Pairspan service** görünmelidir. Ardından [eşleştirme adımlarını](#pair) uygulayın.
-
-## 6. Aktarımı kullanın
-
-Her telefon, bilgisayarda `127.0.0.1:44755` adresinden başlayarak ayrı bir yerel port alır. Masaüstü penceresi her telefonun `adb connect` hedefini gösterir.
-
-```bash
-adb devices
-adb -s 127.0.0.1:44755 shell id
-```
-
-`adb devices` çıktısında telefon `authorizing` görünüyorsa kilidini açıp USB hata ayıklama isteğini onaylayın ve **Her zaman izin ver** seçeneğini işaretleyin.
-
-Tek telefonu ayırmak için Android uygulamasında **Remove connection** düğmesine dokunun. Tüm bağlantıları kesmek için masaüstündeki anahtarı kapatın.
 
 ## Lisans
 
-[MIT](LICENSE)
-
-## Güvenlik ve sorumlu kullanım
-
-Pairspan’i yalnızca size ait veya erişim için açık izin aldığınız cihazlarda; meşru geliştirme, hata ayıklama ve cihaz yönetimi amacıyla kullanın. ADB’yi izinsiz erişim, gizli izleme, veri hırsızlığı, zararlı yazılım veya güvenlik önlemlerini aşmak için kullanmayın.
-
-Yukarıdaki USB kurulumunda cihaz sahibi USB hata ayıklamayı açmalı, telefonun kilidini açmalı ve Android’in hata ayıklama yetkilendirme isteğini onaylamalıdır. Yalnızca güvendiğiniz bilgisayarlara izin verin. Eşleştirme ve otomatik yeniden bağlanma bu yetkilendirmeye bağlı olmalı; iptal edilen izinleri aşmamalıdır. Bkz. [Android ADB belgeleri](https://developer.android.com/tools/adb).
-
-Eşleştirme belirteçlerini ve ADB anahtarlarını gizli tutun. Erişimi sonlandırmak için Pairspan bağlantısını kaldırın ve Android’in Geliştirici seçeneklerinden USB hata ayıklama yetkilerini iptal edin; ihtiyaç kalmadığında hata ayıklamayı kapatın. Android’in güvenlik ve izin modeline ve geçerli [Google Play Cihaz ve Ağ Kötüye Kullanımı politikasına](https://support.google.com/googleplay/android-developer/answer/16559646) uyun. USB üzerinden izin verilmesi tek başına Google Play politikalarına uygunluk anlamına gelmez.
+MIT. Projeye dahil edilen üçüncü taraf kodlar [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) dosyasında.

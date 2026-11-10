@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Window theme only; screens are drawn by Compose with ui/Theme.kt. -->
+    <style name="Theme.Pairspan" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/creme</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+</resources>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Brand palette, shared with the website and desktop app (docs/design.md). -->
+<resources>
+    <color name="ink">#161616</color>
+    <color name="creme">#FAF4EC</color>
+    <color name="off_white">#FFFEF7</color>
+    <color name="ember">#FA5424</color>
+    <color name="ember_soft">#FC997B</color>
+    <color name="ink_night">#111110</color>
+    <color name="ic_launcher_background">#161616</color>
+</resources>

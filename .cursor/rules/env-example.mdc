@@ -1,14 +1,12 @@
 ---
-description: Pairspan keeps only .env.example files
+description: Pairspan env and secret files
 alwaysApply: true
 ---
 
 # Env files
 
-The only env files are:
+- Android release signing and gateway values: `apps/android/.env.example` (git-ignored; template in `apps/android/.env.template`). CI writes it from secrets.
+- Gateway container: `temp.env` next to `docker-compose.yml` (written by the devops pipeline, git-ignored).
+- Desktop app settings live in `~/Library/Application Support/Pairspan/settings.json`, not in the repo.
 
-- `web/.env.example`
-- `mac/.env.example`
-- `android/.env.example`
-
-Do not add `.env`, `.env.local`, or `.env.production`. Each `.env.example` has `GATEWAY_PUBLIC_URL` and an empty `GATEWAY_TOKEN`. The live token is the GitHub secret `GATEWAY_TOKEN`, not a value in the repo. Android Gradle and the Mac app read `.env.example` and send that token on `hello`.
+Never commit keystores, `GATEWAY_TOKEN`, ADB keys or device identifiers. The live token is the GitHub secret `GATEWAY_TOKEN`.

@@ -1,0 +1,14 @@
+{
+  "name": "pairspan",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Pairspan monorepo: website (apps/web), desktop app (apps/desktop). Rust crates build with cargo.",
+  "workspaces": ["apps/web", "apps/desktop"],
+  "scripts": {
+    "build": "cp install.sh apps/web/public/install.sh && npm run build -w apps/web",
+    "dev": "npm run dev -w apps/web",
+    "typecheck": "npm run typecheck -w apps/web",
+    "desktop": "npm run build -w apps/desktop"
+  },
+  "engines": { "node": ">=22" }
+}

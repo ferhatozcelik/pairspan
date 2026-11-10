@@ -1,0 +1,14 @@
+{
+  "name": "pairspan-desktop",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Pairspan desktop app (Tauri). `npm run build` bundles the app with the pairspan CLI and adb inside.",
+  "scripts": {
+    "dev": "node scripts/prepare-bin.mjs --debug && tauri dev",
+    "build": "node scripts/prepare-bin.mjs && tauri build",
+    "tauri": "tauri"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "2.12.4"
+  }
+}

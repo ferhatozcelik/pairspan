@@ -1,6 +1,6 @@
 ---
 name: pairspan
-description: Work in the Pairspan repo. Use when editing pairspan, its README, docs, Android app, Mac or Windows tray app, web service, env files, or the 1.0.0 GitHub release.
+description: Work in the Pairspan repo. Use when editing the gateway, core, CLI/MCP, desktop app, Android app, website, docs, workflows or releases.
 ---
 
 # Pairspan
@@ -9,30 +9,28 @@ description: Work in the Pairspan repo. Use when editing pairspan, its README, d
 
 | Path | Role |
 | --- | --- |
-| `android/` | Android app, package `com.pairspan` |
-| `mac/` | Electron tray app for macOS and Windows |
-| `web/` | Site, WebSocket server, landing page |
+| `crates/gateway` | Rust relay + website server (one Docker image, `Dockerfile` at the root) |
+| `crates/core` | Rust PC agent: crypto, gateway client, ADB tunnel, automation, local JSON-RPC |
+| `crates/cli` | `pairspan` CLI and `pairspan mcp`; talks only to the app's local socket |
+| `apps/desktop` | Tauri app; bundles the CLI and adb (`npm run desktop`) |
+| `apps/android` | Android app, package `com.pairspan`, Kotlin/Compose |
+| `apps/web` | Next.js static site and docs |
 
-There is no iOS app. The public base URL is `https://pairspan.ferhatozcelik.com`. Clients open `wss://pairspan.ferhatozcelik.com/ws`.
+Public base URL `https://pairspan.ferhatozcelik.com`; clients use `wss://pairspan.ferhatozcelik.com/ws`.
 
-## Env
+## Rules
 
-Read and edit only `web/.env.example`, `mac/.env.example`, and `android/.env.example`. Do not create another env file.
-
-## Docs
-
-Write README and markdown docs in English. Keep the root README short: what it is, the site, the 1.0.0 download, and the three folders.
-
-## Release 1.0.0
-
-Tag `v1.0.0`. Assets: `pairspan-mac-1.0.0.dmg`, `pairspan-windows-1.0.0.exe`, `pairspan-android-1.0.0.apk`. Android `versionName` is `1.0.0`.
+- Protocol changes: update `docs/protocol.md`, `crates/core` and the Android app together; keep `docs/test-vectors.json` passing on both sides.
+- UI follows `docs/design.md` (website palette everywhere).
+- Docs in English (README.tr.md mirrors README.md in Turkish).
+- Version 1.0.0 everywhere; Android `versionCode` only goes up.
 
 ## GitHub Actions
 
 | Workflow | When |
 | --- | --- |
-| `web-deploy.yml` | Push to `main`. Kut deploy. |
-| `mac-release.yml` | Tag `v*` or manual. Uploads the DMG. |
-| `android-release.yml` | Tag `v*` or manual. Uploads the APK. |
+| `ci.yml` | Every push: Rust tests, Android unit tests + build, website build |
+| `web-deploy.yml` | Push to `main` touching gateway/web: devops pipeline builds the root `Dockerfile` (`working_directory: .`) |
+| `release.yml` | Tag `v*`: `Pairspan-X.Y.Z-macos-arm64.zip` + signed `pairspan-android-X.Y.Z.apk` |
 
-Secrets: `ARTIFACT_TOKEN`, `GATEWAY_PUBLIC_URL`, `GATEWAY_TOKEN`, `NODE_ENV`. Release builds write the two `GATEWAY_*` values into `.env.example` on the runner. Do not commit the token.
+Secrets: `ARTIFACT_TOKEN`, `DEVOPS_PAT`, `GATEWAY_PUBLIC_URL`, `GATEWAY_TOKEN`, `NODE_ENV`, `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`.

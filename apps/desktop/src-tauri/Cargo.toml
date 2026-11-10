@@ -1,0 +1,19 @@
+[package]
+name = "pairspan-desktop"
+version = "1.0.0"
+description = "Pairspan desktop app: pairs Android phones, keeps the encrypted link and serves the local CLI/MCP socket"
+authors = ["Ferhat Özçelik"]
+license = "MIT"
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+pairspan-core = { path = "../../../crates/core" }
+tauri = { version = "2", features = ["tray-icon", "image-png"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "time", "process", "fs"] }
+anyhow = "1"
+dirs = "5"

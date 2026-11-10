@@ -1,0 +1,18 @@
+# Deployed by .github/workflows/web-deploy.yml through the devops pipeline:
+# it loads the built image as pairspan:latest and ships this file with temp.env.
+# The gateway keeps no pairing state, so one container is enough and restarts are safe.
+services:
+  pairspan:
+    image: pairspan:latest
+    container_name: pairspan
+    restart: always
+    env_file:
+      - ./temp.env # GATEWAY_TOKEN (required in production), optional ALLOWED_ORIGINS, MAX_CONNECTIONS
+    environment:
+      TRUST_PROXY: "1" # Port is loopback-only; TLS terminates at the trusted reverse proxy.
+      LOG_LEVEL: info
+    ports:
+      - "127.0.0.1:16200:3000"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]

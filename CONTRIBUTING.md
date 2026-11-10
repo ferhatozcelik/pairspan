@@ -1,40 +1,34 @@
 # Contributing
 
-Thanks for looking at Pairspan. Issues and pull requests are welcome on the public repository.
+Thanks for looking at Pairspan. Issues and pull requests are welcome.
 
 ## What lives where
 
 | Path | Role |
 | --- | --- |
-| `android/` | Android app. Gradle, Kotlin, Java. |
-| `mac/` | Electron tray app. React UI, Electron main process. |
-| `web/` | Site, WebSocket server, landing page, scripts, and icons. |
+| `crates/gateway` | Rust relay server (also serves the website) |
+| `crates/core` | Rust PC agent shared by the desktop app and tests |
+| `crates/cli` | `pairspan` CLI and MCP server |
+| `apps/desktop` | Tauri desktop app |
+| `apps/android` | Android app (Kotlin, Compose) |
+| `apps/web` | Next.js website and docs |
+| `docs/` | Protocol, design rules, shared test vectors |
 
-Keep a change inside the piece it belongs to. Do not add a new shared package unless two of these pieces already need the same code.
+The wire protocol is specified in [docs/protocol.md](docs/protocol.md). A change to it must update the Rust core, the Android app and the spec together; `crates/core` writes `docs/test-vectors.json` and the Android unit tests replay it.
 
-## Local setup
-
-Use Node.js 22 or newer for `web/` and `mac/`. Use JDK 17 for Android. Android wireless pairing is exercised on Android 11 or newer.
+## Checks before a pull request
 
 ```bash
-cd web && npm install && npm test
-cd mac && npm install && npm run build
-cd android && ./gradlew :app:assembleDebug
+cargo test -p pairspan-gateway -p pairspan-core -p pairspan-cli
+(cd apps/android && ./gradlew :app:testDebugUnitTest :app:assembleDebug)
+npm install && npm run build
 ```
 
-Settings live in each package's `.env.example`. Do not add another env file.
-
-## Pull requests
-
-- Describe the behavior you changed and how you checked it.
-- Keep the diff limited to that behavior.
-- Update [CHANGELOG.md](CHANGELOG.md) when the change is user-visible.
-- Update the matching doc in `web/public/`, `android/README.md`, `mac/README.md`, or `web/README.md` when setup or protocol behavior changes.
-- Do not add generated `build/`, `dist/`, `node_modules/`, or IDE project files.
+UI changes follow [docs/design.md](docs/design.md). Update [CHANGELOG.md](CHANGELOG.md) for user-visible changes.
 
 ## Secrets
 
-Never commit keystores, gateway tokens, ADB keys, or device identifiers. The only env file is `.env.example`. If a secret lands in a commit, rotate it and open a GitHub security advisory. See [SECURITY.md](SECURITY.md).
+Never commit keystores, gateway tokens, ADB keys or device identifiers. Android release signing reads `apps/android/.env.example`, which is git-ignored; copy it from `.env.template`. If a secret lands in a commit, rotate it. See [SECURITY.md](SECURITY.md).
 
 ## Conduct
 

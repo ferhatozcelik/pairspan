@@ -1,6 +1,13 @@
 [workspace]
 resolver = "2"
 members = [
-    "gateway",
-    "desktop/src-tauri",
+    "crates/gateway",
+    "crates/core",
+    "crates/cli",
+    "apps/desktop/src-tauri",
 ]
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true

@@ -1,9 +1,13 @@
+# Builds one image (Rust gateway + Next.js site, see Dockerfile) and deploys it through the
+# devops pipeline, which runs `npm install`, `npm run build` and `docker build .` in the repo root
+# and ships docker-compose.yml with temp.env.
 name: Deploy web
 
 on:
   workflow_dispatch:
   push:
     branches: [ main ]
+    paths: [ "crates/gateway/**", "apps/web/**", "Dockerfile", "docker-compose.yml", "install.sh", "package.json", "package-lock.json", "Cargo.lock", ".github/workflows/web-deploy.yml" ]
 
 jobs:
   deploy:
@@ -14,13 +18,15 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: web/package-lock.json
-      - name: Verify backend
-        working-directory: web
+          cache-dependency-path: package-lock.json
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Verify gateway and website
         run: |
+          cargo test -p pairspan-gateway
           npm ci
           npm run build
-          npm test
+          docker build -t pairspan:verify .
       - name: Require secrets
         env:
           DEVOPS_PAT: ${{ secrets.DEVOPS_PAT }}
@@ -51,7 +57,7 @@ jobs:
             -f app_name="pairspan" \
             -f node-version="22" \
             -f docker_compose_name="docker-compose.yml" \
-            -f working_directory="web" \
+            -f working_directory="." \
             -f artifact_token="$ARTIFACT_TOKEN" \
             -f node_env="$NODE_ENV" \
             -f build_secrets="$BUILD_SECRETS"
