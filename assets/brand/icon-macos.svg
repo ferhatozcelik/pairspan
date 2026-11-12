@@ -3,7 +3,7 @@
     <filter id="s" x="-10%" y="-10%" width="120%" height="125%"><feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#000" flood-opacity=".28"/></filter>
   </defs>
   <rect x="100" y="100" width="824" height="824" rx="185" fill="#161616" filter="url(#s)"/>
-  <g transform="translate(512 512) scale(.8) translate(-512 -512)">
+  <g transform="translate(512 512) scale(.64) translate(-512 -512)">
   <path d="M475 384l-93 93a158 158 0 0 0 223 223l71-71" fill="none" stroke="#fffef7" stroke-width="108" stroke-linecap="round" stroke-linejoin="round"/>
   <path d="M549 640l93-93a158 158 0 0 0-223-223l-71 71" fill="none" stroke="url(#ember)" stroke-width="108" stroke-linecap="round" stroke-linejoin="round"/>
   <circle cx="512" cy="512" r="34" fill="#fa5424"/>
