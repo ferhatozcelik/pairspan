@@ -24,6 +24,8 @@ jobs:
           java-version: 17
           cache: gradle
       - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
       - name: Unit tests (crypto vectors shared with Rust) and debug build
         working-directory: apps/android
         run: ./gradlew :app:testDebugUnitTest :app:assembleDebug --no-daemon
