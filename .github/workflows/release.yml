@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   macos:
-    runs-on: macos-14
+    runs-on: macos-latest
     env:
       PAIRSPAN_GATEWAY_TOKEN: ${{ secrets.GATEWAY_TOKEN }}
     steps:
