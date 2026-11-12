@@ -106,6 +106,76 @@ async fn usb_install_app(agent: State<'_, AgentState>, serial: String) -> CmdRes
     Ok(out)
 }
 
+// ---- Direct control over ADB (works for paired phones through the tunnel and for USB / Wi-Fi adb) ----
+
+/// Every phone adb can reach right now, with paired phones named after their Pairspan name.
+#[tauri::command]
+async fn control_targets(agent: State<'_, AgentState>) -> CmdResult<Vec<Value>> {
+    let paired = agent.status().devices;
+    let attached = adb::all_devices().await.unwrap_or_default();
+    let mut out = Vec::new();
+    for d in &paired {
+        let ready = attached.iter().any(|a| a.serial == d.serial && a.state == "device");
+        out.push(json!({ "serial": d.serial, "name": d.device.name, "kind": "paired", "ready": d.online && ready,
+            "detail": if d.online { "Pairspan tunnel" } else { "offline" } }));
+    }
+    for a in attached.iter().filter(|a| !paired.iter().any(|p| p.serial == a.serial)) {
+        let kind = if a.serial.contains(':') || a.serial.contains("._tcp") { "wifi" } else { "usb" };
+        out.push(json!({ "serial": a.serial, "name": a.model, "kind": kind, "ready": a.state == "device",
+            "detail": if a.state == "device" { if kind == "usb" { "USB" } else { "Wi-Fi adb" } } else { a.state.as_str() } }));
+    }
+    Ok(out)
+}
+
+/// Raw PNG bytes (an ArrayBuffer in JS), so frames skip JSON/base64.
+#[tauri::command]
+async fn control_screen(serial: String) -> CmdResult<tauri::ipc::Response> {
+    automation::screenshot(&serial).await.map(tauri::ipc::Response::new).map_err(err)
+}
+
+#[tauri::command]
+async fn control_tap(serial: String, x: i32, y: i32) -> CmdResult<()> {
+    automation::tap(&serial, x, y).await.map_err(err)
+}
+
+#[tauri::command]
+async fn control_swipe(serial: String, x1: i32, y1: i32, x2: i32, y2: i32, ms: u32) -> CmdResult<()> {
+    automation::swipe(&serial, (x1, y1), (x2, y2), ms.clamp(50, 3000)).await.map_err(err)
+}
+
+#[tauri::command]
+async fn control_key(serial: String, key: String) -> CmdResult<()> {
+    automation::key(&serial, &key).await.map_err(err)
+}
+
+#[tauri::command]
+async fn control_text(serial: String, text: String) -> CmdResult<()> {
+    automation::text(&serial, &text).await.map_err(err)
+}
+
+#[tauri::command]
+async fn control_shell(serial: String, command: String) -> CmdResult<automation::ShellResult> {
+    automation::shell(&serial, &command).await.map_err(err)
+}
+
+#[tauri::command]
+async fn control_info(serial: String) -> CmdResult<Value> {
+    let current = automation::current(&serial).await.ok();
+    let size = automation::screen_size(&serial).await.ok();
+    Ok(json!({ "current": current, "size": size }))
+}
+
+/// Saves a screenshot to ~/Desktop and returns the path.
+#[tauri::command]
+async fn control_save_screenshot(serial: String) -> CmdResult<String> {
+    let png = automation::screenshot(&serial).await.map_err(err)?;
+    let dir = dirs::desktop_dir().or_else(dirs::home_dir).ok_or("no Desktop folder")?;
+    let stamp = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
+    let path = dir.join(format!("Pairspan-{stamp}.png"));
+    std::fs::write(&path, png).map_err(err)?;
+    Ok(path.display().to_string())
+}
+
 /// Where the bundled CLI lives and whether it is on PATH, for the Automation panel.
 #[tauri::command]
 fn cli_info() -> Value {
@@ -240,7 +310,16 @@ fn main() {
             usb_prepare,
             usb_install_app,
             cli_info,
-            open_url
+            open_url,
+            control_targets,
+            control_screen,
+            control_tap,
+            control_swipe,
+            control_key,
+            control_text,
+            control_shell,
+            control_info,
+            control_save_screenshot
         ])
         .build(tauri::generate_context!())
         .expect("failed to build Pairspan")

@@ -12,32 +12,43 @@
       {
         "label": "main",
         "title": "Pairspan",
-        "width": 980,
-        "height": 700,
-        "minWidth": 760,
-        "minHeight": 560,
+        "width": 1100,
+        "height": 740,
+        "minWidth": 860,
+        "minHeight": 600,
         "visible": false,
         "titleBarStyle": "Overlay",
         "hiddenTitle": true
       }
     ],
     "security": {
-      "csp": "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'"
+      "csp": "default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'"
     }
   },
   "bundle": {
     "active": true,
     "category": "DeveloperTool",
-    "copyright": "© 2026 Ferhat Özçelik. MIT License.",
+    "copyright": "\u00a9 2026 Ferhat \u00d6z\u00e7elik. MIT License.",
     "shortDescription": "Pair Android phones and drive them from the CLI or AI agents.",
-    "targets": ["app", "deb", "appimage"],
-    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"],
+    "targets": [
+      "app",
+      "deb",
+      "appimage"
+    ],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
     "macOS": {
       "minimumSystemVersion": "11.0",
       "files": {
         "MacOS/pairspan": "bin/pairspan",
         "MacOS/adb": "bin/adb"
-      }
+      },
+      "signingIdentity": "-"
     }
   }
 }

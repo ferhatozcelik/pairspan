@@ -5,126 +5,276 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Pairspan</title>
 <style>
-/* Pairspan design tokens: same palette as the website (docs/design.md). */
+/* Same palette and shapes as the website (apps/web/app/globals.css, docs/design.md). Kept deliberately simple. */
 :root{
-  --creme:#faf4ec; --off-white:#fffef7; --taupe:#eae4d8; --ink:#161616; --muted:#5c574f;
-  --ember:#fa5424; --ember-soft:#fc997b; --mint:#33c791; --mint-soft:#73e2b6; --sky:#0d8dff;
-  --bg:var(--creme); --surface:var(--off-white); --line:var(--taupe); --text:var(--ink); --sub:var(--muted);
-  --r-l:26px; --r-m:18px; --r-s:12px;
+  --creme:#faf4ec; --off-white:#fffef7; --taupe:#eae4d8; --stone:#c7c2b8; --ink:#161616; --muted:#5c574f;
+  --ember:#fa5424; --ember-soft:#fc997b; --mint:#33c791;
+  --accent:var(--ember); --accent-hover:var(--ink); --accent-soft:color-mix(in srgb,var(--ember) 13%,transparent);
+  --green:var(--mint); --yellow:#f5b83d; --red:var(--ember);
+  --bg:var(--creme); --content:transparent; --card:var(--off-white); --field:var(--off-white); --well:var(--creme);
+  --text:var(--ink); --sub:var(--muted); --faint:var(--stone);
+  --line:var(--taupe); --line-strong:var(--stone);
+  --hover:rgba(22,22,22,.05); --sel:var(--off-white);
+  --btn:transparent; --btn-line:var(--ink); --shadow:none; --dots:rgba(22,22,22,.05);
   --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,monospace;
 }
 @media (prefers-color-scheme:dark){
-  :root{ --bg:#111110; --surface:#1c1b19; --line:#2c2a27; --text:#f6f1e8; --sub:#a8a29e; }
+  :root{
+    --bg:#111110; --card:#1c1b19; --field:#1c1b19; --well:#161514;
+    --text:#f6f1e8; --sub:#a8a29e; --faint:#57534e; --line:#2c2a27; --line-strong:#44403c;
+    --hover:rgba(255,255,255,.05); --sel:#1c1b19; --btn-line:#f6f1e8; --accent-hover:#ff6a3d; --dots:rgba(255,255,255,.04);
+  }
 }
-*{box-sizing:border-box}
+*{box-sizing:border-box}[hidden]{display:none!important}
 html,body{margin:0;height:100%}
-body{background:var(--bg);color:var(--text);font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;
-  background-image:radial-gradient(color-mix(in srgb,var(--text) 6%,transparent) 1px,transparent 0);background-size:28px 28px;user-select:none;-webkit-user-select:none}
-.drag{position:fixed;inset:0 0 auto 0;height:38px;z-index:5}
-main{max-width:960px;margin:0 auto;padding:52px 28px 40px}
-header{display:flex;align-items:center;gap:14px;margin-bottom:26px}
-header img{width:40px;height:40px;border-radius:11px}
-header h1{font-size:1.6rem;font-weight:800;letter-spacing:-.045em;margin:0}
-.pill{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-weight:650;font-size:.82rem}
-.dot{width:9px;height:9px;border-radius:50%;background:var(--sub)}
-.dot.on{background:var(--mint);box-shadow:0 0 0 4px color-mix(in srgb,var(--mint) 25%,transparent)}
-.dot.off{background:var(--ember)}
-.grow{flex:1}
-button{font:inherit;cursor:pointer;border:0;border-radius:999px;padding:10px 18px;font-weight:700;letter-spacing:-.01em;transition:transform .15s,background .15s}
-button:active{transform:scale(.97)}
-.primary{background:var(--ember);color:var(--off-white)}
-.primary:hover{background:var(--ink)}
-@media (prefers-color-scheme:dark){.primary:hover{background:#ff6a3d}}
-.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
-.ghost:hover{background:var(--surface)}
-.danger{background:transparent;color:var(--ember);padding:8px 12px}
-button:disabled{opacity:.5;cursor:default}
-h2{font-size:.78rem;text-transform:uppercase;letter-spacing:.06em;color:var(--sub);margin:30px 0 12px;font-weight:800}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-l);padding:20px}
-.card.dark{background:var(--ink);color:var(--off-white);border-color:var(--ink)}
-.card.dark .sub{color:#c7c2b8}
-.phone .top{display:flex;align-items:center;gap:10px}
-.phone .name{font-weight:800;font-size:1.05rem;letter-spacing:-.02em}
-.sub{color:var(--sub)}
-.mono{font-family:var(--mono);font-size:.85rem;user-select:text;-webkit-user-select:text}
+body{background:var(--bg);background-image:radial-gradient(var(--dots) 1px,transparent 0);background-size:28px 28px;color:var(--text);font:13.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;
+  user-select:none;-webkit-user-select:none;cursor:default;display:flex;overflow:hidden}
+.drag{position:fixed;inset:0 0 auto 0;height:52px;z-index:1}
+
+/* Sidebar */
+aside{width:216px;flex:none;display:flex;flex-direction:column;padding:52px 10px 12px;position:relative;z-index:2}
+.brand{display:flex;align-items:center;gap:9px;padding:0 8px 14px}
+.brand img{width:28px;height:28px;border-radius:8px}
+.brand b{font-size:17px;font-weight:800;letter-spacing:-.045em}
+nav{display:flex;flex-direction:column;gap:2px}
+nav button{all:unset;display:flex;align-items:center;gap:9px;padding:8px 12px;border-radius:999px;color:var(--text);font-weight:650}
+nav button:hover{background:var(--hover)}
+nav button.active{background:var(--ink);color:var(--off-white)}
+@media (prefers-color-scheme:dark){nav button.active{background:var(--off-white);color:var(--ink)}}
+nav button.active svg{color:var(--ember)}
+nav svg{width:17px;height:17px;flex:none;color:var(--accent)}
+nav .count{margin-left:auto;color:var(--sub);font-size:11.5px;font-variant-numeric:tabular-nums}
+.side-foot{margin-top:auto;padding:10px 8px 0;display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--sub)}
+.side-foot .row{gap:7px}
+
+/* Content */
+.pane{flex:1;min-width:0;display:flex;flex-direction:column;position:relative;z-index:2}
+.toolbar{height:64px;flex:none;display:flex;align-items:flex-end;gap:10px;padding:0 24px 8px}
+.toolbar h1{font-size:26px;font-weight:700;margin:0;letter-spacing:-.05em;line-height:1}
+.toolbar .sub{font-size:12px}
+.scroll{flex:1;overflow:auto;padding:20px 24px 28px}
+.view{display:none}.view.active{display:block}
+.view.fill.active{display:flex;height:calc(100vh - 112px)}
+
+.grow{flex:1;min-width:0}
 .row{display:flex;align-items:center;gap:10px}
-.phone .actions{display:flex;gap:6px;margin-top:14px}
-.empty{text-align:center;padding:36px 20px}
-.empty p{margin:6px 0 18px}
-.two{display:grid;grid-template-columns:1.1fr .9fr;gap:14px}
-@media (max-width:820px){.two{grid-template-columns:1fr}}
-.code{display:flex;align-items:center;gap:8px;background:#ffffff14;border-radius:var(--r-s);padding:10px 12px;margin-top:8px}
+.sub{color:var(--sub)}
+.mono{font-family:var(--mono);font-size:11.5px;user-select:text;-webkit-user-select:text}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--faint);flex:none}
+.dot.on{background:var(--green)}.dot.off{background:var(--red)}.dot.wait{background:var(--yellow)}
+
+h2{font-size:11px;font-weight:800;color:var(--ember);margin:24px 4px 8px;text-transform:uppercase;letter-spacing:.06em}
+h2:first-child{margin-top:0}
+.group{background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.item{display:flex;align-items:center;gap:12px;padding:11px 14px;min-height:44px}
+.item+.item{border-top:1px solid var(--line)}
+.item .title{font-weight:600}
+.item .meta{font-size:12px;color:var(--sub)}
+.icon-tile{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);flex:none}
+.icon-tile svg{width:17px;height:17px}
+.note{font-size:12px;color:var(--sub);margin:7px 4px 0}
+
+button{font:inherit;font-size:12.5px;font-weight:700;letter-spacing:-.01em;cursor:pointer;border-radius:999px;padding:5px 14px;min-height:28px;transition:background .15s,color .15s;
+  background:var(--btn);color:var(--text);border:.5px solid var(--btn-line);box-shadow:var(--shadow);white-space:nowrap}
+button:hover{background:var(--hover)}
+button:active{transform:scale(.97)}
+button.primary{background:var(--ember);color:var(--off-white);border-color:transparent}
+button.primary:hover{background:var(--accent-hover)}
+button.plain{background:transparent;border-color:transparent;box-shadow:none;color:var(--accent)}
+button.plain:hover{background:var(--hover)}
+button.danger{color:var(--red)}
+button:disabled{opacity:.45}
+button.icon{padding:4px 8px;display:inline-flex;align-items:center;gap:6px}
+button.icon svg{width:15px;height:15px}
+
+input,select,textarea{font:inherit;font-size:13px;color:var(--text);background:var(--field);border:1px solid var(--line);border-radius:12px;padding:7px 12px;outline:none;
+  user-select:text;-webkit-user-select:text}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+input{width:100%}
+
+.switch{position:relative;width:38px;height:22px;border-radius:999px;background:var(--line-strong);flex:none;transition:background .2s}
+.switch::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.3);transition:transform .2s}
+.switch.on{background:var(--accent)}.switch.on::after{transform:translateX(16px)}
+
+.code{display:flex;align-items:center;gap:8px;background:var(--well);border:1px solid var(--line);border-radius:12px;padding:7px 8px 7px 11px}
 .code span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.code button{padding:4px 10px;font-size:.78rem;background:#ffffff1f;color:inherit}
-.switch{position:relative;width:46px;height:28px;border-radius:999px;background:#ffffff33;flex:none;cursor:pointer;transition:background .2s}
-.switch::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--off-white);transition:transform .2s}
-.switch.on{background:var(--ember)}
-.switch.on::after{transform:translateX(18px)}
-.usb li{display:flex;align-items:center;gap:8px;padding:10px 0;border-top:1px solid var(--line);list-style:none}
-.usb ul{padding:0;margin:10px 0 0}
-.usb li button{padding:6px 12px;font-size:.8rem}
-input{font:inherit;width:100%;padding:10px 14px;border-radius:var(--r-s);border:1px solid var(--line);background:var(--bg);color:var(--text)}
-details summary{cursor:pointer;font-weight:700}
-.log{max-height:220px;overflow:auto;margin-top:10px;white-space:pre-wrap;font-family:var(--mono);font-size:.78rem;color:var(--sub);user-select:text;-webkit-user-select:text}
-.modal{position:fixed;inset:0;background:#16161699;display:none;align-items:center;justify-content:center;z-index:10;backdrop-filter:blur(6px)}
+.stack{display:flex;flex-direction:column;gap:8px;padding:12px 14px}
+
+.empty{text-align:center;padding:42px 20px}
+.empty .icon-tile{width:46px;height:46px;border-radius:12px;margin:0 auto 12px}
+.empty .icon-tile svg{width:24px;height:24px}
+.empty b{font-size:14px}
+.empty p{margin:4px 0 16px;color:var(--sub)}
+
+/* Control view */
+.control{gap:20px;width:100%}
+.screen-col{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--well);border:1px solid var(--line);border-radius:26px;position:relative;overflow:hidden;padding:16px}
+.screen{position:relative;display:flex;outline:none;height:100%;align-items:center}
+.screen img{display:block;height:calc(100vh - 160px);width:auto;max-width:100%;border-radius:18px;box-shadow:0 0 0 7px #111,0 0 0 8px #333,0 20px 50px -10px rgba(0,0,0,.5);cursor:crosshair;-webkit-user-drag:none}
+.screen:focus-visible img{box-shadow:0 0 0 7px #111,0 0 0 9px var(--accent)}
+.ripple{position:absolute;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;background:color-mix(in srgb,var(--accent) 55%,transparent);pointer-events:none;animation:rip .45s ease-out forwards}
+@keyframes rip{from{transform:scale(.4);opacity:1}to{transform:scale(1.6);opacity:0}}
+.screen-msg{color:var(--sub);text-align:center;max-width:300px}
+.fps{position:absolute;top:10px;right:12px;font-size:11px;color:var(--sub);font-variant-numeric:tabular-nums}
+.side-col{width:300px;flex:none;display:flex;flex-direction:column;gap:14px;overflow:auto}
+.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:12px 14px}
+.keys button{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;font-size:11.5px}
+.keys svg{width:18px;height:18px}
+.out{font-family:var(--mono);font-size:11px;white-space:pre-wrap;max-height:180px;overflow:auto;color:var(--sub);margin:0;user-select:text;-webkit-user-select:text}
+.log{font-family:var(--mono);font-size:11px;white-space:pre-wrap;max-height:260px;overflow:auto;color:var(--sub);user-select:text;-webkit-user-select:text;padding:10px 14px;margin:0}
+
+/* Pair sheet */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.28);display:none;align-items:flex-start;justify-content:center;z-index:10;padding-top:60px}
 .modal.show{display:flex}
-.sheet{background:var(--surface);border-radius:var(--r-l);padding:28px;width:min(440px,92vw);text-align:center;box-shadow:0 30px 80px -20px #0008}
-.qr{background:var(--off-white);border-radius:var(--r-m);padding:12px;display:inline-block;margin:16px 0 8px}
-.qr svg{display:block;width:240px;height:240px}
-.pair-code{font-family:var(--mono);font-size:1.15rem;font-weight:700;letter-spacing:.06em;user-select:text;-webkit-user-select:text}
-.steps{text-align:left;margin:16px 0 18px;padding-left:20px;color:var(--sub)}
-.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--off-white);padding:10px 18px;border-radius:999px;font-weight:650;opacity:0;transition:opacity .2s;pointer-events:none;z-index:20}
-.toast.show{opacity:1}
+.sheet{background:var(--card);border:1px solid var(--line);border-radius:26px;padding:22px 26px;width:min(400px,92vw);text-align:center;box-shadow:0 22px 70px rgba(0,0,0,.35)}
+.sheet h1{margin:0;font-size:22px;letter-spacing:-.045em}
+.qr{background:#fff;border-radius:10px;padding:10px;display:inline-block;margin:16px 0 8px}
+.qr svg{display:block;width:210px;height:210px}
+.pair-code{font-family:var(--mono);font-size:15px;font-weight:600;letter-spacing:.06em;user-select:text;-webkit-user-select:text}
+.steps{text-align:left;margin:14px 0 18px;padding-left:20px;color:var(--sub)}
+.toast{position:fixed;bottom:18px;left:calc(50% + 108px);transform:translate(-50%,8px);background:var(--ink);color:var(--off-white);padding:8px 16px;border-radius:999px;font-weight:650;font-size:12.5px;opacity:0;transition:.2s;pointer-events:none;z-index:20;max-width:70vw}
+.toast.show{opacity:1;transform:translate(-50%,0)}
 </style>
 </head>
 <body>
 <div class="drag" data-tauri-drag-region></div>
-<main>
-  <header>
-    <img src="icon.png" alt="">
-    <h1>Pairspan</h1>
-    <span class="pill" id="conn"><i class="dot" id="conn-dot"></i><span id="conn-text">Connecting…</span></span>
-    <span class="grow"></span>
-    <button class="primary" id="pair-btn">Pair a phone</button>
-  </header>
 
-  <h2>Phones</h2>
-  <div id="phones" class="grid"></div>
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></symbol>
+  <symbol id="i-control" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V10m0-1.5a1.5 1.5 0 0 1 3 0V11m0-1a1.5 1.5 0 0 1 3 0v4.5a6 6 0 0 1-6 6h-.6a6 6 0 0 1-4.7-2.3L4.4 15a1.5 1.5 0 0 1 2.3-1.9L9 15"/></symbol>
+  <symbol id="i-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m5 8 4 4-4 4M12 16h7"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+  <symbol id="i-usb" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v15m0 0a2 2 0 1 0 0 .01M12 3l-2 3h4zM12 13l-4-3V8M12 15l4-3v-2"/><rect x="7" y="6.5" width="2" height="2"/><circle cx="16" cy="9" r="1"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 5 8 12l8 7"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="7"/></symbol>
+  <symbol id="i-recents" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5.5" y="5.5" width="13" height="13" rx="2"/></symbol>
+  <symbol id="i-power" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 3v8M7 6.3a7 7 0 1 0 10 0"/></symbol>
+  <symbol id="i-voldown" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3l4-3.5v12l-4-3.5H4zM15 12h5"/></symbol>
+  <symbol id="i-volup" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3l4-3.5v12l-4-3.5H4zM15 12h5M17.5 9.5v5"/></symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.2"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l10.5-6.5z"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="5.5" width="3.5" height="13" rx="1"/><rect x="13.5" y="5.5" width="3.5" height="13" rx="1"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></symbol>
+</svg>
 
-  <div class="two">
-    <section>
-      <h2>Automation</h2>
-      <div class="card dark">
-        <div class="row">
-          <div class="grow"><b>Allow CLI and MCP</b><div class="sub">Scripts and AI agents on this Mac can control paired phones.</div></div>
+<aside>
+  <div class="brand"><img src="icon.png" alt=""><b>Pairspan</b></div>
+  <nav>
+    <button data-view="phones" class="active"><svg><use href="#i-phone"/></svg>Phones<span class="count" id="nav-count"></span></button>
+    <button data-view="control"><svg><use href="#i-control"/></svg>Control</button>
+    <button data-view="automation"><svg><use href="#i-auto"/></svg>Automation</button>
+    <button data-view="settings"><svg><use href="#i-gear"/></svg>Settings</button>
+  </nav>
+  <div class="side-foot">
+    <div class="row"><i class="dot" id="conn-dot"></i><span id="conn-text">Connecting…</span></div>
+    <div id="version"></div>
+  </div>
+</aside>
+
+<div class="pane">
+  <div class="toolbar" data-tauri-drag-region>
+    <h1 id="view-title">Phones</h1>
+    <span class="sub" id="view-sub"></span>
+    <span class="grow" data-tauri-drag-region></span>
+    <span id="toolbar-actions" class="row"></span>
+  </div>
+  <div class="scroll">
+
+    <!-- Phones -->
+    <section class="view active" id="v-phones">
+      <h2>Paired phones</h2>
+      <div id="phones"></div>
+      <h2>Connected over USB / Wi-Fi adb</h2>
+      <div class="group" id="usb-list"></div>
+      <div class="note">Plug a phone in with USB debugging on to install the Pairspan app or turn on wireless ADB for the tunnel. Any phone listed here can be driven from <b>Control</b>.</div>
+    </section>
+
+    <!-- Control -->
+    <section class="view fill" id="v-control">
+      <div class="control row" style="align-items:stretch">
+        <div class="screen-col">
+          <span class="fps" id="fps"></span>
+          <div class="screen" id="screen" tabindex="0" hidden><img id="screen-img" alt="" draggable="false" hidden></div>
+          <div class="screen-msg" id="screen-msg">Choose a phone to see its screen.</div>
+        </div>
+        <div class="side-col">
+          <div class="group stack">
+            <select id="target"></select>
+            <div class="row">
+              <button class="icon" id="live-btn"><svg><use href="#i-pause"/></svg><span>Pause</span></button>
+              <button class="icon" id="shot-btn"><svg><use href="#i-camera"/></svg>Screenshot</button>
+              <span class="grow"></span>
+            </div>
+            <div class="meta sub mono" id="current"></div>
+          </div>
+          <div class="group keys">
+            <button data-key="back"><svg><use href="#i-back"/></svg>Back</button>
+            <button data-key="home"><svg><use href="#i-home"/></svg>Home</button>
+            <button data-key="recents"><svg><use href="#i-recents"/></svg>Recents</button>
+            <button data-key="volume_down"><svg><use href="#i-voldown"/></svg>Vol −</button>
+            <button data-key="power"><svg><use href="#i-power"/></svg>Power</button>
+            <button data-key="volume_up"><svg><use href="#i-volup"/></svg>Vol +</button>
+          </div>
+          <div class="group stack">
+            <b>Type text</b>
+            <div class="row"><input id="text-in" placeholder="Text for the focused field" spellcheck="false"><button id="text-send">Send</button></div>
+            <div class="note" style="margin:0">Tip: click the screen, then type — keys go straight to the phone. Esc = Back.</div>
+          </div>
+          <div class="group stack">
+            <b>adb shell</b>
+            <div class="row"><input id="sh-in" class="mono" placeholder="e.g. pm list packages -3" spellcheck="false"><button id="sh-run">Run</button></div>
+            <pre class="out" id="sh-out" hidden></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Automation -->
+    <section class="view" id="v-automation">
+      <div class="group">
+        <div class="item">
+          <div class="icon-tile"><svg><use href="#i-auto"/></svg></div>
+          <div class="grow"><div class="title">Allow CLI and MCP</div><div class="meta">Scripts and AI agents on this Mac can control paired phones.</div></div>
           <div class="switch" id="auto-switch" role="switch" tabindex="0"></div>
         </div>
+      </div>
+      <h2>Command line</h2>
+      <div class="group stack">
         <div class="code mono"><span>pairspan devices</span><button data-copy="pairspan devices">Copy</button></div>
+        <div class="code mono"><span>pairspan screenshot -o screen.png</span><button data-copy="pairspan screenshot -o screen.png">Copy</button></div>
+        <div class="code mono"><span>pairspan click "Sign in"</span><button data-copy='pairspan click "Sign in"'>Copy</button></div>
+      </div>
+      <div class="note" id="cli-hint"></div>
+      <h2>AI agents (MCP)</h2>
+      <div class="group stack">
         <div class="code mono"><span>claude mcp add pairspan -- pairspan mcp</span><button data-copy="claude mcp add pairspan -- pairspan mcp">Copy</button></div>
-        <div class="sub" id="cli-hint" style="margin-top:10px;font-size:.82rem"></div>
+        <div class="code mono"><span>{"mcpServers":{"pairspan":{"command":"pairspan","args":["mcp"]}}}</span><button data-copy='{"mcpServers":{"pairspan":{"command":"pairspan","args":["mcp"]}}}'>Copy</button></div>
       </div>
+      <div class="note">The second line works for Cursor, VS Code and other MCP clients.</div>
     </section>
-    <section>
-      <h2>First-time USB setup</h2>
-      <div class="card usb">
-        <div class="row"><div class="grow sub">Connect the phone with USB once to install the app and enable wireless ADB.</div><button class="ghost" id="usb-refresh">Refresh</button></div>
-        <ul id="usb-list"></ul>
-      </div>
-    </section>
-  </div>
 
-  <h2>Settings</h2>
-  <div class="card">
-    <label class="sub" for="gw">Gateway</label>
-    <div class="row" style="margin-top:6px"><input id="gw" spellcheck="false"><button class="ghost" id="gw-save">Save</button></div>
-    <details style="margin-top:16px"><summary>Activity</summary><div class="log" id="log"></div></details>
+    <!-- Settings -->
+    <section class="view" id="v-settings">
+      <h2>Gateway</h2>
+      <div class="group stack">
+        <div class="row"><input id="gw" class="mono" spellcheck="false"><button id="gw-save">Save</button></div>
+      </div>
+      <div class="note">Phones and this Mac meet through the gateway; traffic is end-to-end encrypted, the gateway only routes it.</div>
+      <h2>About</h2>
+      <div class="group">
+        <div class="item"><div class="grow">Version</div><span class="sub" id="about-version"></span></div>
+        <div class="item"><div class="grow">This Mac's id</div><span class="mono sub" id="about-id"></span></div>
+        <div class="item"><div class="grow">Automation socket</div><span class="mono sub" id="about-socket"></span></div>
+      </div>
+      <h2>Activity</h2>
+      <div class="group"><pre class="log" id="log"></pre></div>
+    </section>
   </div>
-</main>
+</div>
 
 <div class="modal" id="modal">
   <div class="sheet">
-    <h1 style="margin:0;font-size:1.4rem;letter-spacing:-.04em">Pair a phone</h1>
+    <h1>Pair a phone</h1>
     <div class="qr" id="qr"></div>
     <div class="pair-code" id="code"></div>
     <div class="sub" id="expires"></div>
@@ -133,7 +283,7 @@ details summary{cursor:pointer;font-weight:700}
       <li>Tap <b>Scan QR code</b>, or type the code above.</li>
       <li>Keep this window open until the phone appears.</li>
     </ol>
-    <button class="ghost" id="pair-cancel">Cancel</button>
+    <button id="pair-cancel">Cancel</button>
   </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -142,35 +292,88 @@ details summary{cursor:pointer;font-weight:700}
 const { invoke } = window.__TAURI__.core;
 const { listen } = window.__TAURI__.event;
 const $ = (id) => document.getElementById(id);
-const el = (tag, props = {}, ...kids) => { const e = Object.assign(document.createElement(tag), props); e.append(...kids); return e; };
-let state = null, countdown = null;
+const el = (tag, props = {}, ...kids) => { const e = Object.assign(document.createElement(tag), props); e.append(...kids.filter(k => k != null)); return e; };
+const icon = (name) => { const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.innerHTML = `<use href="#i-${name}"/>`; return s; };
+let state = null, countdown = null, view = 'phones';
 
-function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 2400); }
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 2600); }
 async function call(cmd, args) { try { return await invoke(cmd, args); } catch (e) { toast(String(e)); throw e; } }
+const busy = (b, fn) => async () => { b.disabled = true; try { await fn(); } catch {} b.disabled = false; };
 
+// ---------- Navigation ----------
+const titles = { phones: 'Phones', control: 'Control', automation: 'Automation', settings: 'Settings' };
+function show(v) {
+  view = v;
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('active', b.dataset.view === v));
+  document.querySelectorAll('.view').forEach(s => s.classList.toggle('active', s.id === 'v-' + v));
+  $('view-title').textContent = titles[v];
+  const actions = $('toolbar-actions'); actions.replaceChildren(); $('view-sub').textContent = '';
+  if (v === 'phones') {
+    const b = el('button', { className: 'primary icon' }, icon('plus'), 'Pair a phone'); b.onclick = startPairing; actions.append(b);
+    const r = el('button', { textContent: 'Refresh' }); r.onclick = refreshUsb; actions.append(r);
+    refreshUsb();
+  }
+  if (v === 'control') { loadTargets(); }
+  if (v === 'settings') refreshLog();
+  scheduleFrame(0);
+}
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => show(b.dataset.view));
+
+// ---------- Phones ----------
 function renderPhones(s) {
   const box = $('phones'); box.replaceChildren();
+  const online = s.devices.filter(d => d.online).length;
+  $('nav-count').textContent = s.devices.length ? `${online}/${s.devices.length}` : '';
   if (!s.devices.length) {
-    box.append(el('div', { className: 'card empty', style: 'grid-column:1/-1' },
+    const b = el('button', { className: 'primary', textContent: 'Pair a phone' }); b.onclick = startPairing;
+    box.append(el('div', { className: 'group empty' },
+      el('div', { className: 'icon-tile' }, icon('phone')),
       el('b', { textContent: 'No phones yet' }),
-      el('p', { className: 'sub', textContent: 'Install Pairspan on your Android phone, then pair it with a QR code.' }),
-      Object.assign(el('button', { className: 'primary', textContent: 'Pair a phone' }), { onclick: startPairing })));
+      el('p', { textContent: 'Install Pairspan on your Android phone, then pair it with a QR code.' }), b));
     return;
   }
+  const group = el('div', { className: 'group' });
   for (const d of s.devices) {
     const meta = [d.model, d.android && `Android ${d.android}`].filter(Boolean).join(' · ') || 'Android phone';
-    const remove = el('button', { className: 'danger', textContent: 'Remove' });
-    remove.onclick = async () => { remove.disabled = true; await call('unpair', { id: d.id }).catch(() => {}); refresh(); };
-    const copy = el('button', { className: 'ghost', textContent: 'Copy serial' });
+    const ctl = el('button', { textContent: 'Control', disabled: !d.online }); ctl.onclick = () => openControl(d.serial);
+    const copy = el('button', { className: 'plain', textContent: 'Copy serial' });
     copy.onclick = () => { navigator.clipboard.writeText(d.serial); toast('Copied ' + d.serial); };
-    box.append(el('div', { className: 'card phone' },
-      el('div', { className: 'top' }, el('i', { className: 'dot ' + (d.online ? 'on' : '') }), el('span', { className: 'name', textContent: d.name })),
-      el('div', { className: 'sub', textContent: meta }),
-      el('div', { className: 'mono sub', style: 'margin-top:6px', textContent: (d.online ? 'adb ' : 'offline · ') + d.serial }),
-      el('div', { className: 'actions' }, copy, remove)));
+    const remove = el('button', { className: 'plain danger', textContent: 'Remove' });
+    remove.onclick = busy(remove, async () => { await call('unpair', { id: d.id }); refresh(); });
+    group.append(el('div', { className: 'item' },
+      el('div', { className: 'icon-tile' }, icon('phone')),
+      el('div', { className: 'grow' },
+        el('div', { className: 'row', style: 'gap:7px' }, el('i', { className: 'dot ' + (d.online ? 'on' : '') }), el('span', { className: 'title', textContent: d.name })),
+        el('div', { className: 'meta', textContent: meta + ' · ' + (d.online ? 'online' : 'offline') }),
+        el('div', { className: 'mono sub', textContent: 'adb ' + d.serial })),
+      copy, remove, ctl));
+  }
+  box.append(group);
+}
+
+async function refreshUsb() {
+  const list = $('usb-list'); list.replaceChildren();
+  let devices = [];
+  try { devices = (await invoke('control_targets')).filter(t => t.kind !== 'paired'); }
+  catch (e) { list.append(el('div', { className: 'item sub', textContent: String(e) })); return; }
+  if (!devices.length) { list.append(el('div', { className: 'item sub', textContent: 'No phones on USB or Wi-Fi adb.' })); return; }
+  for (const d of devices) {
+    const ready = d.ready, usb = d.kind === 'usb';
+    const install = el('button', { className: 'plain', textContent: 'Install app', disabled: !ready });
+    install.onclick = busy(install, async () => { await call('usb_install_app', { serial: d.serial }); toast('Pairspan installed on ' + d.name); });
+    const prep = el('button', { className: 'plain', textContent: 'Enable wireless ADB', disabled: !ready });
+    prep.onclick = busy(prep, async () => { await call('usb_prepare', { serial: d.serial }); toast('Wireless ADB enabled. You can unplug the phone.'); });
+    const ctl = el('button', { textContent: 'Control', disabled: !ready }); ctl.onclick = () => openControl(d.serial);
+    list.append(el('div', { className: 'item' },
+      el('div', { className: 'icon-tile' }, icon(usb ? 'usb' : 'phone')),
+      el('div', { className: 'grow' },
+        el('div', { className: 'title', textContent: d.name }),
+        el('div', { className: 'meta mono', textContent: ready ? `${d.serial} · ${d.detail}` : `${d.serial} · ${d.detail} — allow USB debugging on the phone` })),
+      usb ? install : null, usb ? prep : null, ctl));
   }
 }
 
+// ---------- Pairing ----------
 function renderPairing(p) {
   const m = $('modal');
   if (!p) { m.classList.remove('show'); clearInterval(countdown); return; }
@@ -182,21 +385,129 @@ function renderPairing(p) {
   tick(); countdown = setInterval(tick, 1000);
   m.classList.add('show');
 }
-
-async function refresh() {
-  state = await invoke('status');
-  $('conn-dot').className = 'dot ' + (state.connected ? 'on' : 'off');
-  $('conn-text').textContent = state.connected ? 'Connected' : 'Offline';
-  $('auto-switch').classList.toggle('on', state.automation);
-  if (document.activeElement !== $('gw')) $('gw').value = state.gateway;
-  renderPhones(state);
-  renderPairing(state.pairing);
-}
-
 async function startPairing() { const p = await call('start_pairing'); renderPairing(p); }
-$('pair-btn').onclick = startPairing;
 $('pair-cancel').onclick = async () => { await call('cancel_pairing'); renderPairing(null); };
 
+// ---------- Control ----------
+let target = '', live = true, frameTimer = null, inflight = false, lastUrl = null, frames = [];
+const img = $('screen-img');
+
+async function loadTargets(select) {
+  const sel = $('target');
+  let list = [];
+  try { list = await invoke('control_targets'); } catch (e) { toast(String(e)); }
+  sel.replaceChildren();
+  if (!list.length) sel.append(el('option', { value: '', textContent: 'No phones available' }));
+  for (const t of list) sel.append(el('option', { value: t.serial, disabled: !t.ready, textContent: `${t.name} — ${t.detail}` }));
+  const want = select || target;
+  const pick = list.find(t => t.serial === want && t.ready) || list.find(t => t.ready);
+  setTarget(pick ? pick.serial : '');
+}
+function setTarget(serial) {
+  target = serial; $('target').value = serial;
+  img.hidden = true; $('screen').hidden = true; $('fps').textContent = ''; $('current').textContent = '';
+  $('screen-msg').hidden = false;
+  $('screen-msg').textContent = serial ? 'Loading screen…' : 'No phone is reachable. Pair one, or connect it with USB debugging on.';
+  if (serial) { scheduleFrame(0); refreshInfo(); }
+}
+$('target').onchange = (e) => setTarget(e.target.value);
+function openControl(serial) { show('control'); loadTargets(serial); }
+
+function scheduleFrame(delay) {
+  clearTimeout(frameTimer);
+  if (view !== 'control' || !target || document.hidden) return;
+  frameTimer = setTimeout(nextFrame, delay);
+}
+async function nextFrame() {
+  if (inflight) return;
+  inflight = true; const serial = target;
+  try {
+    const buf = await invoke('control_screen', { serial });
+    if (serial !== target) return;
+    const bytes = buf instanceof ArrayBuffer || ArrayBuffer.isView(buf) ? buf : new Uint8Array(buf); // ArrayBuffer, or a number[] on older IPC
+    const url = URL.createObjectURL(new Blob([bytes], { type: 'image/png' }));
+    img.onload = () => { if (lastUrl) URL.revokeObjectURL(lastUrl); lastUrl = url; };
+    img.src = url; img.hidden = false; $('screen-msg').hidden = true; $('screen').hidden = false;
+    const now = performance.now(); frames = frames.filter(t => now - t < 3000); frames.push(now);
+    $('fps').textContent = live ? `${(frames.length / 3).toFixed(1)} fps` : 'paused';
+  } catch (e) {
+    if (serial === target) { img.hidden = true; $('screen').hidden = true; $('screen').hidden = true; $('screen-msg').hidden = false; $('screen-msg').textContent = String(e); }
+  } finally {
+    inflight = false;
+    if (live) scheduleFrame(120);
+  }
+}
+document.addEventListener('visibilitychange', () => scheduleFrame(0));
+$('live-btn').onclick = () => {
+  live = !live;
+  $('live-btn').replaceChildren(icon(live ? 'pause' : 'play'), el('span', { textContent: live ? 'Pause' : 'Live' }));
+  scheduleFrame(0);
+};
+async function refreshInfo() {
+  if (!target) return;
+  try { const i = await invoke('control_info', { serial: target }); $('current').textContent = [i.current, i.size && i.size.join('×')].filter(Boolean).join('  ·  '); } catch {}
+}
+const after = () => { scheduleFrame(250); clearTimeout(after._t); after._t = setTimeout(refreshInfo, 900); };
+
+function toDevice(e) {
+  const r = img.getBoundingClientRect();
+  return { x: Math.round((e.clientX - r.left) / r.width * img.naturalWidth), y: Math.round((e.clientY - r.top) / r.height * img.naturalHeight),
+           px: e.clientX - r.left, py: e.clientY - r.top };
+}
+function ripple(p) { const d = el('span', { className: 'ripple' }); d.style.left = p.px + 'px'; d.style.top = p.py + 'px'; $('screen').append(d); setTimeout(() => d.remove(), 500); }
+let down = null;
+img.addEventListener('mousedown', (e) => { if (e.button === 0) { down = { ...toDevice(e), t: performance.now() }; $('screen').focus(); e.preventDefault(); } });
+window.addEventListener('mouseup', async (e) => {
+  if (!down || !target) { down = null; return; }
+  const start = down; down = null;
+  const end = toDevice(e), ms = Math.round(performance.now() - start.t);
+  const moved = Math.hypot(end.px - start.px, end.py - start.py) > 8;
+  ripple(start);
+  try {
+    if (!moved && ms > 550) await invoke('control_swipe', { serial: target, x1: start.x, y1: start.y, x2: start.x, y2: start.y, ms }); // long press
+    else if (!moved) await invoke('control_tap', { serial: target, x: start.x, y: start.y });
+    else await invoke('control_swipe', { serial: target, x1: start.x, y1: start.y, x2: end.x, y2: end.y, ms: Math.max(120, ms) });
+  } catch (err) { toast(String(err)); }
+  after();
+});
+let wheelAcc = 0, wheelT = null;
+img.addEventListener('wheel', (e) => {
+  e.preventDefault(); if (!target) return;
+  wheelAcc += e.deltaY; const p = toDevice(e);
+  clearTimeout(wheelT);
+  wheelT = setTimeout(async () => {
+    const dy = Math.max(-0.6, Math.min(0.6, wheelAcc / 600)) * img.naturalHeight; wheelAcc = 0;
+    try { await invoke('control_swipe', { serial: target, x1: p.x, y1: p.y, x2: p.x, y2: Math.round(p.y - dy), ms: 220 }); } catch (err) { toast(String(err)); }
+    after();
+  }, 90);
+}, { passive: false });
+
+const sendKey = async (key) => { if (!target) return; try { await invoke('control_key', { serial: target, key }); } catch (e) { toast(String(e)); } after(); };
+document.querySelectorAll('[data-key]').forEach(b => b.onclick = () => sendKey(b.dataset.key));
+let typed = '', typeT = null;
+$('screen').addEventListener('keydown', (e) => {
+  if (!target || e.metaKey || e.ctrlKey) return;
+  const map = { Backspace: 'del', Enter: 'enter', Escape: 'back', Tab: 'tab', ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' };
+  if (map[e.key]) { e.preventDefault(); flushTyped().then(() => sendKey(map[e.key])); return; }
+  if (e.key.length === 1) { e.preventDefault(); typed += e.key; clearTimeout(typeT); typeT = setTimeout(flushTyped, 160); }
+});
+async function flushTyped() {
+  clearTimeout(typeT); if (!typed) return; const t = typed; typed = '';
+  try { await invoke('control_text', { serial: target, text: t }); } catch (e) { toast(String(e)); } after();
+}
+const sendText = async () => { const t = $('text-in').value; if (!t || !target) return; await call('control_text', { serial: target, text: t }).catch(() => {}); $('text-in').value = ''; after(); };
+$('text-send').onclick = sendText; $('text-in').onkeydown = (e) => { if (e.key === 'Enter') sendText(); };
+const runShell = async () => {
+  const c = $('sh-in').value.trim(); if (!c || !target) return;
+  const out = $('sh-out'); out.hidden = false; out.textContent = '$ ' + c + '\n…';
+  try { const r = await invoke('control_shell', { serial: target, command: c }); out.textContent = `$ ${c}\n${r.output || ''}${r.code ? `\n[exit ${r.code}]` : ''}`; }
+  catch (e) { out.textContent = `$ ${c}\n${e}`; }
+  after();
+};
+$('sh-run').onclick = runShell; $('sh-in').onkeydown = (e) => { if (e.key === 'Enter') runShell(); };
+$('shot-btn').onclick = busy($('shot-btn'), async () => { if (!target) return; const p = await call('control_save_screenshot', { serial: target }); toast('Saved ' + p.split('/').pop() + ' to Desktop'); });
+
+// ---------- Automation & settings ----------
 $('auto-switch').onclick = async () => {
   const s = await invoke('settings');
   await call('save_settings', { settings: { ...s, automation_enabled: !s.automation_enabled } });
@@ -208,31 +519,26 @@ $('gw-save').onclick = async () => {
   toast('Saved. Reconnecting…'); refresh();
 };
 document.querySelectorAll('[data-copy]').forEach(b => b.onclick = () => { navigator.clipboard.writeText(b.dataset.copy); toast('Copied'); });
+async function refreshLog() { const l = $('log'); l.textContent = (await invoke('logs')).join('\n') || 'Nothing yet.'; l.scrollTop = l.scrollHeight; }
 
-async function refreshUsb() {
-  const list = $('usb-list'); list.replaceChildren();
-  let devices = [];
-  try { devices = await invoke('usb_devices'); } catch (e) { list.append(el('li', { className: 'sub', textContent: String(e) })); return; }
-  if (!devices.length) { list.append(el('li', { className: 'sub', textContent: 'No phones on USB.' })); return; }
-  for (const d of devices) {
-    const install = el('button', { className: 'ghost', textContent: 'Install app' });
-    const prep = el('button', { className: 'primary', textContent: 'Enable wireless ADB' });
-    const busy = (b, fn) => async () => { b.disabled = true; try { await fn(); } catch {} b.disabled = false; };
-    install.onclick = busy(install, async () => { await call('usb_install_app', { serial: d.serial }); toast('Pairspan installed on ' + d.model); });
-    prep.onclick = busy(prep, async () => { await call('usb_prepare', { serial: d.serial }); toast('Wireless ADB enabled. You can unplug the phone.'); });
-    const ready = d.state === 'device';
-    install.disabled = prep.disabled = !ready;
-    list.append(el('li', {}, el('span', { className: 'grow' }, el('b', { textContent: d.model }), el('div', { className: 'sub mono', textContent: ready ? d.serial : `${d.serial} · ${d.state} — allow USB debugging on the phone` })), install, prep));
-  }
+async function refresh() {
+  state = await invoke('status');
+  $('conn-dot').className = 'dot ' + (state.connected ? 'on' : 'off');
+  $('conn-text').textContent = state.connected ? 'Gateway connected' : 'Gateway offline';
+  $('version').textContent = 'Version ' + state.version;
+  $('about-version').textContent = state.version;
+  $('about-id').textContent = state.id;
+  $('auto-switch').classList.toggle('on', state.automation);
+  if (document.activeElement !== $('gw')) $('gw').value = state.gateway;
+  renderPhones(state);
+  renderPairing(state.pairing);
 }
-$('usb-refresh').onclick = refreshUsb;
-
-async function refreshLog() { $('log').textContent = (await invoke('logs')).join('\n'); }
 
 (async () => {
   const cli = await invoke('cli_info');
-  $('cli-hint').textContent = cli.on_path ? '`pairspan` is on your PATH.' : 'Run install.sh to add `pairspan` to your PATH' + (cli.bundled ? ` (bundled at ${cli.bundled}).` : '.');
-  await refresh(); refreshUsb(); refreshLog();
+  $('cli-hint').textContent = cli.on_path ? 'The pairspan command is on your PATH.' : 'Run install.sh to add the pairspan command to your PATH' + (cli.bundled ? ` (bundled at ${cli.bundled}).` : '.');
+  $('about-socket').textContent = cli.socket;
+  await refresh(); show('phones');
   await listen('pairspan://event', (e) => {
     const ev = e.payload;
     if (ev.type === 'log') { const l = $('log'); l.textContent += (l.textContent ? '\n' : '') + ev.line; l.scrollTop = l.scrollHeight; }
@@ -240,7 +546,7 @@ async function refreshLog() { $('log').textContent = (await invoke('logs')).join
     if (ev.type === 'pairing_failed') toast('Pairing failed: ' + ev.reason);
     if (ev.type !== 'log') refresh();
   });
-  await listen('pairspan://pair', startPairing);
+  await listen('pairspan://pair', () => { show('phones'); startPairing(); });
   setInterval(refresh, 5000);
 })();
 </script>

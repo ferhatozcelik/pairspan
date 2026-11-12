@@ -90,6 +90,15 @@ pub struct UsbDevice {
 
 /// Phones attached over USB (network serials such as `127.0.0.1:47100` are skipped).
 pub async fn usb_devices() -> Result<Vec<UsbDevice>> {
+    list(false).await
+}
+
+/// Every phone adb sees: USB, wireless debugging and Pairspan tunnels (`127.0.0.1:port`).
+pub async fn all_devices() -> Result<Vec<UsbDevice>> {
+    list(true).await
+}
+
+async fn list(include_network: bool) -> Result<Vec<UsbDevice>> {
     let out = run(None, &["devices", "-l"], Duration::from_secs(10)).await?.ok()?;
     Ok(out
         .text()
@@ -99,7 +108,7 @@ pub async fn usb_devices() -> Result<Vec<UsbDevice>> {
             let mut parts = line.split_whitespace();
             let serial = parts.next()?.to_string();
             let state = parts.next()?.to_string();
-            if serial.contains(':') || serial.contains("._tcp") {
+            if !include_network && (serial.contains(':') || serial.contains("._tcp")) {
                 return None;
             }
             let model = parts

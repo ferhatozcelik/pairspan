@@ -45,6 +45,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -184,7 +185,10 @@ class MainActivity : ComponentActivity() {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 8.dp)) {
                     Logo(36)
                     Spacer(Modifier.width(12.dp))
-                    Text(stringResource(R.string.app_name), style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                    Text(
+                        stringResource(R.string.app_name), modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold, letterSpacing = (-0.9).sp),
+                    )
                     IconButton(onClick = onSettings) { Icon(Icons.Filled.Settings, stringResource(R.string.settings_title)) }
                 }
             }
@@ -193,13 +197,18 @@ class MainActivity : ComponentActivity() {
                 item { SectionLabel(stringResource(R.string.section_computers)) }
                 items(state.pcs.size) { i -> PcCard(state.pcs[i], onRemove = { removing = state.pcs[i] }) }
                 item {
-                    OutlinedButton(onClick = ::scan, modifier = Modifier.fillMaxWidth().height(50.dp)) {
-                        Text(stringResource(R.string.action_pair_another))
-                    }
+                    OutlinedButton(
+                        onClick = ::scan, modifier = Modifier.fillMaxWidth().height(50.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.5.dp, MaterialTheme.colorScheme.onBackground),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onBackground),
+                    ) { Text(stringResource(R.string.action_pair_another)) }
                 }
             }
-            item { SectionLabel(stringResource(R.string.section_setup)) }
-            item { SetupCard() }
+            // Only the steps still to do; the section disappears once the phone is fully set up.
+            if (!(checks.adb && checks.notifications && checks.battery && checks.camera)) {
+                item { SectionLabel(stringResource(R.string.section_setup)) }
+                item { SetupCard() }
+            }
             item {
                 Text(
                     stringResource(R.string.settings_version, BuildConfig.VERSION_NAME),
@@ -338,16 +347,23 @@ class MainActivity : ComponentActivity() {
             Modifier.fillMaxWidth().clip(MaterialTheme.shapes.large).background(MaterialTheme.colorScheme.surface)
                 .border(1.dp, MaterialTheme.colorScheme.outlineVariant, MaterialTheme.shapes.large),
         ) {
-            SetupRow(stringResource(R.string.setup_adb), stringResource(if (checks.adb) R.string.setup_adb_ok else R.string.setup_adb_missing), checks.adb, stringResource(R.string.action_check)) { refreshChecks() }
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-            SetupRow(stringResource(R.string.setup_notifications), stringResource(R.string.setup_notifications_d), checks.notifications, stringResource(R.string.action_allow)) {
-                if (Build.VERSION.SDK_INT >= 33) notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+            val rows = buildList<@Composable () -> Unit> {
+                if (!checks.adb) add { SetupRow(stringResource(R.string.setup_adb), stringResource(R.string.setup_adb_missing), false, stringResource(R.string.action_check)) { refreshChecks() } }
+                if (!checks.notifications) add {
+                    SetupRow(stringResource(R.string.setup_notifications), stringResource(R.string.setup_notifications_d), false, stringResource(R.string.action_allow)) {
+                        if (Build.VERSION.SDK_INT >= 33) notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                }
+                if (!checks.battery) add { SetupRow(stringResource(R.string.setup_battery), stringResource(R.string.setup_battery_d), false, stringResource(R.string.action_allow), ::requestBattery) }
+                if (!checks.camera) add {
+                    SetupRow(stringResource(R.string.setup_camera), stringResource(R.string.setup_camera_d), false, stringResource(R.string.action_allow)) {
+                        cameraPermission.launch(Manifest.permission.CAMERA)
+                    }
+                }
             }
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-            SetupRow(stringResource(R.string.setup_battery), stringResource(R.string.setup_battery_d), checks.battery, stringResource(R.string.action_allow), ::requestBattery)
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-            SetupRow(stringResource(R.string.setup_camera), stringResource(R.string.setup_camera_d), checks.camera, stringResource(R.string.action_allow)) {
-                cameraPermission.launch(Manifest.permission.CAMERA)
+            rows.forEachIndexed { i, row ->
+                if (i > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                row()
             }
         }
     }
@@ -370,9 +386,9 @@ class MainActivity : ComponentActivity() {
             }
             if (!done) {
                 Spacer(Modifier.width(8.dp))
-                FilledTonalButton(
-                    onClick = onAction, contentPadding = PaddingValues(horizontal = 14.dp),
-                    colors = ButtonDefaults.filledTonalButtonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                Button(
+                    onClick = onAction, contentPadding = PaddingValues(horizontal = 16.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.onBackground, contentColor = MaterialTheme.colorScheme.background),
                 ) { Text(action, style = MaterialTheme.typography.labelLarge) }
             }
         }
