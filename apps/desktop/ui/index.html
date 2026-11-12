@@ -44,8 +44,7 @@ nav button.active{background:var(--ink);color:var(--off-white)}
 nav button.active svg{color:var(--ember)}
 nav svg{width:17px;height:17px;flex:none;color:var(--accent)}
 nav .count{margin-left:auto;color:var(--sub);font-size:11.5px;font-variant-numeric:tabular-nums}
-.side-foot{margin-top:auto;padding:10px 8px 0;display:flex;flex-direction:column;gap:4px;font-size:11.5px;color:var(--sub)}
-.side-foot .row{gap:7px}
+.side-foot{margin-top:auto;padding-top:10px}
 
 /* Content */
 .pane{flex:1;min-width:0;display:flex;flex-direction:column;position:relative;z-index:2}
@@ -54,7 +53,7 @@ nav .count{margin-left:auto;color:var(--sub);font-size:11.5px;font-variant-numer
 .toolbar .sub{font-size:12px}
 .scroll{flex:1;overflow:auto;padding:20px 24px 28px}
 .view{display:none}.view.active{display:block}
-.view.fill.active{display:flex;height:calc(100vh - 112px)}
+.view.fill.active{display:flex;flex-direction:column;height:calc(100vh - 112px)}
 
 .grow{flex:1;min-width:0}
 .row{display:flex;align-items:center;gap:10px}
@@ -107,10 +106,10 @@ input{width:100%}
 .empty p{margin:4px 0 16px;color:var(--sub)}
 
 /* Control view */
-.control{gap:20px;width:100%}
-.screen-col{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--well);border:1px solid var(--line);border-radius:26px;position:relative;overflow:hidden;padding:16px}
+.control{gap:20px;width:100%;flex:1;min-height:0}
+.screen-col{flex:1;min-width:0;align-self:stretch;min-height:calc(100vh - 112px);display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--well);border:1px solid var(--line);border-radius:26px;position:relative;overflow:hidden;padding:16px}
 .screen{position:relative;display:flex;outline:none;height:100%;align-items:center}
-.screen img{display:block;height:calc(100vh - 160px);width:auto;max-width:100%;border-radius:18px;box-shadow:0 0 0 7px #111,0 0 0 8px #333,0 20px 50px -10px rgba(0,0,0,.5);cursor:crosshair;-webkit-user-drag:none}
+.screen img{display:block;height:calc(100vh - 164px);width:auto;max-width:100%;border-radius:18px;box-shadow:0 0 0 7px #111,0 0 0 8px #333,0 20px 50px -10px rgba(0,0,0,.5);cursor:crosshair;-webkit-user-drag:none}
 .screen:focus-visible img{box-shadow:0 0 0 7px #111,0 0 0 9px var(--accent)}
 .ripple{position:absolute;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;background:color-mix(in srgb,var(--accent) 55%,transparent);pointer-events:none;animation:rip .45s ease-out forwards}
 @keyframes rip{from{transform:scale(.4);opacity:1}to{transform:scale(1.6);opacity:0}}
@@ -122,6 +121,53 @@ input{width:100%}
 .keys svg{width:18px;height:18px}
 .out{font-family:var(--mono);font-size:11px;white-space:pre-wrap;max-height:180px;overflow:auto;color:var(--sub);margin:0;user-select:text;-webkit-user-select:text}
 .log{font-family:var(--mono);font-size:11px;white-space:pre-wrap;max-height:260px;overflow:auto;color:var(--sub);user-select:text;-webkit-user-select:text;padding:10px 14px;margin:0}
+
+/* Mode switch (segmented, pill like the website) */
+.seg{display:inline-flex;padding:3px;border-radius:999px;background:var(--card);border:1px solid var(--line);gap:2px}
+.seg button{border:0;background:transparent;padding:4px 12px;min-height:24px;display:inline-flex;align-items:center;gap:6px;color:var(--sub)}
+.seg button svg{width:14px;height:14px}
+.seg button.on{background:var(--ink);color:var(--off-white)}
+@media (prefers-color-scheme:dark){.seg button.on{background:var(--off-white);color:var(--ink)}}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--sub);cursor:pointer;padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:var(--card)}
+.chip input{width:auto;margin:0;accent-color:var(--ember)}
+.chip.on{color:var(--ember);border-color:color-mix(in srgb,var(--ember) 45%,transparent)}
+
+/* Multi view */
+.wall{flex:1;min-width:0;overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px;align-content:start;padding-bottom:6px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:26px;padding:12px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.tile.sel{border-color:var(--ember);box-shadow:0 0 0 3px var(--accent-soft)}
+.tile-head{display:flex;align-items:center;gap:8px;padding:0 4px;min-width:0}
+.tile-head b{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tile-head .sub{font-size:11px;margin-left:auto;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tile-screen{position:relative;display:flex;justify-content:center;align-items:center;background:var(--well);border-radius:18px;min-height:220px;outline:none;overflow:hidden}
+.tile-screen img{display:block;height:min(calc(100vh - 290px),520px);width:auto;max-width:100%;object-fit:contain;border-radius:14px;cursor:crosshair;-webkit-user-drag:none}
+.tile-screen:focus-visible{box-shadow:0 0 0 2px var(--accent)}
+.tile-screen .screen-msg{font-size:12px;padding:20px}
+.tile-keys{display:flex;gap:6px}
+.tile-keys button{flex:1;display:inline-flex;justify-content:center;padding:4px 0}
+.tile-keys button svg{width:15px;height:15px}
+
+/* Status card (sidebar) */
+.status-card{all:unset;display:block;cursor:pointer;margin:0 2px;padding:13px 14px 12px;border-radius:18px;background:var(--ink);color:var(--off-white);position:relative;overflow:hidden;transition:transform .15s}
+.status-card:hover{transform:translateY(-1px)}
+@media (prefers-color-scheme:dark){.status-card{background:#1c1b19;border:1px solid #2c2a27}}
+.status-card::before{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 0);background-size:14px 14px;pointer-events:none}
+.sc-top{display:flex;align-items:center;gap:8px;position:relative}
+.sc-label{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--stone)}
+.sc-pill{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;padding:2px 9px 2px 7px;border-radius:999px;background:rgba(51,199,145,.16);color:#73e2b6}
+.sc-pill.off{background:rgba(250,84,36,.18);color:#fc997b}
+.sc-pill i{width:7px;height:7px;border-radius:50%;background:currentColor;position:relative}
+.sc-pill:not(.off) i::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid currentColor;opacity:0;animation:pulse 1.8s ease-out infinite}
+@keyframes pulse{from{transform:scale(.4);opacity:.8}to{transform:scale(1.4);opacity:0}}
+.sc-host{position:relative;margin:9px 0 10px;font-family:var(--mono);font-size:11.5px;color:var(--off-white);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sc-stats{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+.sc-stats div{display:flex;flex-direction:column;gap:1px;min-width:0}
+.sc-stats b{font-size:15px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.sc-stats span{font-size:10px;color:var(--stone)}
+.sc-spark{position:relative;display:flex;align-items:flex-end;gap:2px;height:20px;margin-top:10px}
+.sc-spark i{flex:1;border-radius:2px;background:rgba(255,254,247,.18);min-height:2px}
+.sc-spark i.last{background:var(--ember)}
+.sc-foot{position:relative;margin-top:8px;font-size:10.5px;color:var(--stone);display:flex;justify-content:space-between}
 
 /* Pair sheet */
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.28);display:none;align-items:flex-start;justify-content:center;z-index:10;padding-top:60px}
@@ -154,6 +200,9 @@ input{width:100%}
   <symbol id="i-camera" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.2"/></symbol>
   <symbol id="i-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l10.5-6.5z"/></symbol>
   <symbol id="i-pause" viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="5.5" width="3.5" height="13" rx="1"/><rect x="13.5" y="5.5" width="3.5" height="13" rx="1"/></symbol>
+  <symbol id="i-single" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="7.5" y="3" width="9" height="18" rx="2"/></symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></symbol>
+  <symbol id="i-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></symbol>
   <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></symbol>
 </svg>
 
@@ -166,8 +215,17 @@ input{width:100%}
     <button data-view="settings"><svg><use href="#i-gear"/></svg>Settings</button>
   </nav>
   <div class="side-foot">
-    <div class="row"><i class="dot" id="conn-dot"></i><span id="conn-text">Connecting…</span></div>
-    <div id="version"></div>
+    <button class="status-card" id="status-card" title="Gateway settings">
+      <div class="sc-top"><span class="sc-label">Status</span><span class="sc-pill off" id="sc-pill"><i></i><span id="conn-text">Connecting</span></span></div>
+      <div class="sc-host" id="sc-host">—</div>
+      <div class="sc-stats">
+        <div><b id="sc-phones">0</b><span>phones</span></div>
+        <div><b id="sc-ping">—</b><span>latency</span></div>
+        <div><b id="sc-auto">—</b><span>automation</span></div>
+      </div>
+      <div class="sc-spark" id="sc-spark"></div>
+      <div class="sc-foot"><span>End-to-end encrypted</span><span id="version"></span></div>
+    </button>
   </div>
 </aside>
 
@@ -191,7 +249,8 @@ input{width:100%}
 
     <!-- Control -->
     <section class="view fill" id="v-control">
-      <div class="control row" style="align-items:stretch">
+      <div class="wall" id="wall" hidden></div>
+      <div class="control row" id="single" style="align-items:stretch">
         <div class="screen-col">
           <span class="fps" id="fps"></span>
           <div class="screen" id="screen" tabindex="0" hidden><img id="screen-img" alt="" draggable="false" hidden></div>
@@ -258,6 +317,8 @@ input{width:100%}
       <h2>Gateway</h2>
       <div class="group stack">
         <div class="row"><input id="gw" class="mono" spellcheck="false"><button id="gw-save">Save</button></div>
+        <div class="row"><span class="sub grow">Default: <span class="mono" id="gw-default"></span></span><button class="plain" id="gw-reset">Use default</button></div>
+        <div class="row"><input id="gw-token" class="mono" type="password" placeholder="Gateway token (only if the gateway asks for one)" spellcheck="false" autocomplete="off"><button id="gw-token-save">Save</button></div>
       </div>
       <div class="note">Phones and this Mac meet through the gateway; traffic is end-to-end encrypted, the gateway only routes it.</div>
       <h2>About</h2>
@@ -302,7 +363,7 @@ const busy = (b, fn) => async () => { b.disabled = true; try { await fn(); } cat
 
 // ---------- Navigation ----------
 const titles = { phones: 'Phones', control: 'Control', automation: 'Automation', settings: 'Settings' };
-function show(v) {
+function show(v, serial) {
   view = v;
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('active', b.dataset.view === v));
   document.querySelectorAll('.view').forEach(s => s.classList.toggle('active', s.id === 'v-' + v));
@@ -313,9 +374,8 @@ function show(v) {
     const r = el('button', { textContent: 'Refresh' }); r.onclick = refreshUsb; actions.append(r);
     refreshUsb();
   }
-  if (v === 'control') { loadTargets(); }
+  if (v === 'control') loadTargets(serial);
   if (v === 'settings') refreshLog();
-  scheduleFrame(0);
 }
 document.querySelectorAll('nav button').forEach(b => b.onclick = () => show(b.dataset.view));
 
@@ -389,123 +449,216 @@ async function startPairing() { const p = await call('start_pairing'); renderPai
 $('pair-cancel').onclick = async () => { await call('cancel_pairing'); renderPairing(null); };
 
 // ---------- Control ----------
-let target = '', live = true, frameTimer = null, inflight = false, lastUrl = null, frames = [];
-const img = $('screen-img');
+// Two modes: "single" (one big screen + tools) and "grid" (every reachable phone live at once).
+let mode = 'single', live = true, mirror = false, target = '', targets = [];
+try { mode = localStorage.getItem('pairspan.mode') === 'grid' ? 'grid' : 'single'; } catch {}
+const streams = new Map(); // serial -> frame loop
+const sizes = {};          // serial -> device pixels {w,h}, from the last frame
 
-async function loadTargets(select) {
-  const sel = $('target');
-  let list = [];
-  try { list = await invoke('control_targets'); } catch (e) { toast(String(e)); }
-  sel.replaceChildren();
-  if (!list.length) sel.append(el('option', { value: '', textContent: 'No phones available' }));
-  for (const t of list) sel.append(el('option', { value: t.serial, disabled: !t.ready, textContent: `${t.name} — ${t.detail}` }));
-  const want = select || target;
-  const pick = list.find(t => t.serial === want && t.ready) || list.find(t => t.ready);
-  setTarget(pick ? pick.serial : '');
+function makeStream(serial, ui, delay, always) {
+  const st = { serial, ui, delay, always, stop: false, t: null, busy: false, frames: [], url: null };
+  st.kick = (d = 0) => { clearTimeout(st.t); if (!st.stop) st.t = setTimeout(() => pump(st), d); };
+  streams.set(serial, st);
+  return st;
 }
-function setTarget(serial) {
-  target = serial; $('target').value = serial;
-  img.hidden = true; $('screen').hidden = true; $('fps').textContent = ''; $('current').textContent = '';
-  $('screen-msg').hidden = false;
-  $('screen-msg').textContent = serial ? 'Loading screen…' : 'No phone is reachable. Pair one, or connect it with USB debugging on.';
-  if (serial) { scheduleFrame(0); refreshInfo(); }
-}
-$('target').onchange = (e) => setTarget(e.target.value);
-function openControl(serial) { show('control'); loadTargets(serial); }
-
-function scheduleFrame(delay) {
-  clearTimeout(frameTimer);
-  if (view !== 'control' || !target || document.hidden) return;
-  frameTimer = setTimeout(nextFrame, delay);
-}
-async function nextFrame() {
-  if (inflight) return;
-  inflight = true; const serial = target;
+function stopStreams() { for (const st of streams.values()) { st.stop = true; clearTimeout(st.t); } streams.clear(); }
+const kickAll = (d = 0) => { for (const st of streams.values()) st.kick(d); };
+async function pump(st) {
+  if (st.stop || st.busy || view !== 'control' || document.hidden) return; // show()/visibility kick it again
+  st.busy = true;
+  const { img, box, msg, fps } = st.ui;
   try {
-    const buf = await invoke('control_screen', { serial });
-    if (serial !== target) return;
+    const buf = await invoke('control_screen', { serial: st.serial });
+    if (st.stop) return;
     const bytes = buf instanceof ArrayBuffer || ArrayBuffer.isView(buf) ? buf : new Uint8Array(buf); // ArrayBuffer, or a number[] on older IPC
     const url = URL.createObjectURL(new Blob([bytes], { type: 'image/png' }));
-    img.onload = () => { if (lastUrl) URL.revokeObjectURL(lastUrl); lastUrl = url; };
-    img.src = url; img.hidden = false; $('screen-msg').hidden = true; $('screen').hidden = false;
-    const now = performance.now(); frames = frames.filter(t => now - t < 3000); frames.push(now);
-    $('fps').textContent = live ? `${(frames.length / 3).toFixed(1)} fps` : 'paused';
+    img.onload = () => { if (st.url) URL.revokeObjectURL(st.url); st.url = url; sizes[st.serial] = { w: img.naturalWidth, h: img.naturalHeight }; };
+    img.src = url; img.hidden = false; msg.hidden = true; if (box) box.hidden = false;
+    const now = performance.now(); st.frames = st.frames.filter(t => now - t < 3000); st.frames.push(now);
+    if (fps) fps.textContent = st.always || live ? `${(st.frames.length / 3).toFixed(1)} fps` : 'paused';
   } catch (e) {
-    if (serial === target) { img.hidden = true; $('screen').hidden = true; $('screen').hidden = true; $('screen-msg').hidden = false; $('screen-msg').textContent = String(e); }
+    if (!st.stop) { img.hidden = true; if (box) box.hidden = true; msg.hidden = false; msg.textContent = String(e); }
   } finally {
-    inflight = false;
-    if (live) scheduleFrame(120);
+    st.busy = false;
+    if (!st.stop && (st.always || live)) st.kick(st.delay);
   }
 }
-document.addEventListener('visibilitychange', () => scheduleFrame(0));
+document.addEventListener('visibilitychange', () => kickAll(0));
+
+async function loadTargets(select) {
+  try { targets = await invoke('control_targets'); } catch (e) { toast(String(e)); targets = []; }
+  const sel = $('target'); sel.replaceChildren();
+  if (!targets.length) sel.append(el('option', { value: '', textContent: 'No phones available' }));
+  for (const t of targets) sel.append(el('option', { value: t.serial, disabled: !t.ready, textContent: `${t.name} — ${t.detail}` }));
+  const want = select || target;
+  const pick = targets.find(t => t.serial === want && t.ready) || targets.find(t => t.ready);
+  applyMode(pick ? pick.serial : '');
+}
+function setMode(m, serial) { mode = m; try { localStorage.setItem('pairspan.mode', m); } catch {} applyMode(serial || target); }
+function applyMode(serial) {
+  stopStreams();
+  $('wall').hidden = mode !== 'grid'; $('single').hidden = mode === 'grid';
+  if (mode === 'grid') renderWall(); else setTarget(serial);
+  controlToolbar();
+}
+function controlToolbar() {
+  if (view !== 'control') return;
+  const actions = $('toolbar-actions'); actions.replaceChildren();
+  const seg = el('div', { className: 'seg' });
+  for (const [m, ic, label] of [['single', 'single', 'Single'], ['grid', 'grid', 'Multi view']]) {
+    const b = el('button', { className: mode === m ? 'on' : '' }, icon(ic), label); b.onclick = () => setMode(m); seg.append(b);
+  }
+  if (mode === 'grid') {
+    const box = el('input', { type: 'checkbox', checked: mirror });
+    const chip = el('label', { className: 'chip' + (mirror ? ' on' : ''), title: 'Taps, swipes, keys and text go to every phone on the wall' }, box, 'Mirror input');
+    box.onchange = () => { mirror = box.checked; chip.classList.toggle('on', mirror); };
+    actions.append(chip);
+  }
+  const r = el('button', { textContent: 'Refresh' }); r.onclick = () => loadTargets();
+  actions.append(seg, r);
+  const ready = targets.filter(t => t.ready).length;
+  $('view-sub').textContent = mode === 'grid' && ready ? `${ready} phone${ready > 1 ? 's' : ''} live` : '';
+}
+
+const single = { img: $('screen-img'), box: $('screen'), msg: $('screen-msg'), fps: $('fps') };
+function setTarget(serial) {
+  stopStreams();
+  target = serial; $('target').value = serial;
+  single.img.hidden = true; single.box.hidden = true; single.fps.textContent = ''; $('current').textContent = '';
+  single.msg.hidden = false;
+  single.msg.textContent = serial ? 'Loading screen…' : 'No phone is reachable. Pair one, or connect it with USB debugging on.';
+  if (serial) { makeStream(serial, single, 120, false).kick(0); refreshInfo(); }
+}
+$('target').onchange = (e) => setTarget(e.target.value);
+function openControl(serial) { mode = 'single'; try { localStorage.setItem('pairspan.mode', 'single'); } catch {} show('control', serial); }
+
+function renderWall() {
+  const wall = $('wall'); wall.replaceChildren();
+  const ready = targets.filter(t => t.ready);
+  if (!ready.length) {
+    wall.append(el('div', { className: 'group empty', style: 'grid-column:1/-1' },
+      el('div', { className: 'icon-tile' }, icon('grid')), el('b', { textContent: 'No phones to show' }),
+      el('p', { textContent: 'Pair phones, or connect them with USB debugging on. Every reachable phone shows up here live.' })));
+    return;
+  }
+  ready.forEach((t, i) => {
+    const img = el('img', { alt: '', draggable: false, hidden: true });
+    const msg = el('div', { className: 'screen-msg', textContent: 'Loading…' });
+    const box = el('div', { className: 'tile-screen', tabIndex: 0 }, img, msg);
+    const fps = el('span', { className: 'sub' });
+    const open = el('button', { className: 'plain icon', title: 'Open in single view' }, icon('expand')); open.onclick = () => setMode('single', t.serial);
+    const keys = el('div', { className: 'tile-keys' });
+    for (const [k, ic] of [['back', 'back'], ['home', 'home'], ['recents', 'recents']]) {
+      const b = el('button', { title: k }, icon(ic)); b.onclick = () => act(t.serial, 'key', { key: k }); keys.append(b);
+    }
+    const tile = el('div', { className: 'tile' },
+      el('div', { className: 'tile-head' }, el('i', { className: 'dot on' }), el('b', { textContent: t.name, title: `${t.serial} · ${t.detail}` }), fps, open),
+      box, keys);
+    box.addEventListener('focus', () => tile.classList.add('sel')); box.addEventListener('blur', () => tile.classList.remove('sel'));
+    bindInput(img, box, t.serial);
+    wall.append(tile);
+    makeStream(t.serial, { img, msg, fps }, 300, true).kick(i * 90);
+  });
+}
+
+// Input: coordinates are sent as fractions of the screen so "Mirror input" works across resolutions.
+async function act(serial, kind, a = {}) {
+  if (!serial) return;
+  const list = mirror && mode === 'grid' ? [...streams.keys()] : [serial];
+  await Promise.all(list.map(async (s) => {
+    const z = sizes[s], X = (f) => Math.round(f * z.w), Y = (f) => Math.round(f * z.h);
+    try {
+      if (kind === 'tap' && z) await invoke('control_tap', { serial: s, x: X(a.nx), y: Y(a.ny) });
+      if (kind === 'swipe' && z) await invoke('control_swipe', { serial: s, x1: X(a.nx), y1: Y(a.ny), x2: X(a.nx2), y2: Y(a.ny2), ms: a.ms });
+      if (kind === 'key') await invoke('control_key', { serial: s, key: a.key });
+      if (kind === 'text') await invoke('control_text', { serial: s, text: a.text });
+    } catch (e) { toast(String(e)); }
+  }));
+  for (const s of list) streams.get(s)?.kick(250);
+  if (mode === 'single') { clearTimeout(act._t); act._t = setTimeout(refreshInfo, 900); }
+}
+async function refreshInfo() {
+  if (!target || mode !== 'single') return;
+  try { const i = await invoke('control_info', { serial: target }); $('current').textContent = [i.current, i.size && i.size.join('×')].filter(Boolean).join('  ·  '); } catch {}
+}
+
+function point(img, box, e) {
+  const r = img.getBoundingClientRect(), b = box.getBoundingClientRect();
+  return { nx: Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)), ny: Math.min(1, Math.max(0, (e.clientY - r.top) / r.height)),
+           px: e.clientX - b.left, py: e.clientY - b.top };
+}
+function ripple(box, p) { const d = el('span', { className: 'ripple' }); d.style.left = p.px + 'px'; d.style.top = p.py + 'px'; box.append(d); setTimeout(() => d.remove(), 500); }
+let drag = null, typed = '', typedFor = '', typeT = null;
+function bindInput(img, box, serial) {
+  const who = () => serial || target;
+  img.addEventListener('mousedown', (e) => {
+    if (e.button !== 0) return;
+    drag = { img, box, serial: who(), start: point(img, box, e), t: performance.now() }; box.focus(); e.preventDefault();
+  });
+  let acc = 0, wt = null;
+  img.addEventListener('wheel', (e) => {
+    e.preventDefault(); acc += e.deltaY; const p = point(img, box, e);
+    clearTimeout(wt);
+    wt = setTimeout(() => { const dy = Math.max(-0.6, Math.min(0.6, acc / 600)); acc = 0; act(who(), 'swipe', { nx: p.nx, ny: p.ny, nx2: p.nx, ny2: Math.min(1, Math.max(0, p.ny - dy)), ms: 220 }); }, 90);
+  }, { passive: false });
+  box.addEventListener('keydown', (e) => {
+    if (e.metaKey || e.ctrlKey) return;
+    const map = { Backspace: 'del', Enter: 'enter', Escape: 'back', Tab: 'tab', ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' };
+    if (map[e.key]) { e.preventDefault(); flushTyped().then(() => act(who(), 'key', { key: map[e.key] })); return; }
+    if (e.key.length === 1) { e.preventDefault(); if (typedFor !== who()) flushTyped(); typedFor = who(); typed += e.key; clearTimeout(typeT); typeT = setTimeout(flushTyped, 160); }
+  });
+}
+window.addEventListener('mouseup', (e) => {
+  if (!drag) return;
+  const { img, box, serial, start, t } = drag; drag = null;
+  const end = point(img, box, e), ms = Math.round(performance.now() - t);
+  const moved = Math.hypot(end.px - start.px, end.py - start.py) > 8;
+  ripple(box, start);
+  if (!moved && ms > 550) act(serial, 'swipe', { nx: start.nx, ny: start.ny, nx2: start.nx, ny2: start.ny, ms }); // long press
+  else if (!moved) act(serial, 'tap', start);
+  else act(serial, 'swipe', { nx: start.nx, ny: start.ny, nx2: end.nx, ny2: end.ny, ms: Math.max(120, ms) });
+});
+async function flushTyped() {
+  clearTimeout(typeT); if (!typed) return; const text = typed; typed = '';
+  await act(typedFor, 'text', { text });
+}
+bindInput(single.img, single.box, '');
+
 $('live-btn').onclick = () => {
   live = !live;
   $('live-btn').replaceChildren(icon(live ? 'pause' : 'play'), el('span', { textContent: live ? 'Pause' : 'Live' }));
-  scheduleFrame(0);
+  kickAll(0);
 };
-async function refreshInfo() {
-  if (!target) return;
-  try { const i = await invoke('control_info', { serial: target }); $('current').textContent = [i.current, i.size && i.size.join('×')].filter(Boolean).join('  ·  '); } catch {}
-}
-const after = () => { scheduleFrame(250); clearTimeout(after._t); after._t = setTimeout(refreshInfo, 900); };
-
-function toDevice(e) {
-  const r = img.getBoundingClientRect();
-  return { x: Math.round((e.clientX - r.left) / r.width * img.naturalWidth), y: Math.round((e.clientY - r.top) / r.height * img.naturalHeight),
-           px: e.clientX - r.left, py: e.clientY - r.top };
-}
-function ripple(p) { const d = el('span', { className: 'ripple' }); d.style.left = p.px + 'px'; d.style.top = p.py + 'px'; $('screen').append(d); setTimeout(() => d.remove(), 500); }
-let down = null;
-img.addEventListener('mousedown', (e) => { if (e.button === 0) { down = { ...toDevice(e), t: performance.now() }; $('screen').focus(); e.preventDefault(); } });
-window.addEventListener('mouseup', async (e) => {
-  if (!down || !target) { down = null; return; }
-  const start = down; down = null;
-  const end = toDevice(e), ms = Math.round(performance.now() - start.t);
-  const moved = Math.hypot(end.px - start.px, end.py - start.py) > 8;
-  ripple(start);
-  try {
-    if (!moved && ms > 550) await invoke('control_swipe', { serial: target, x1: start.x, y1: start.y, x2: start.x, y2: start.y, ms }); // long press
-    else if (!moved) await invoke('control_tap', { serial: target, x: start.x, y: start.y });
-    else await invoke('control_swipe', { serial: target, x1: start.x, y1: start.y, x2: end.x, y2: end.y, ms: Math.max(120, ms) });
-  } catch (err) { toast(String(err)); }
-  after();
-});
-let wheelAcc = 0, wheelT = null;
-img.addEventListener('wheel', (e) => {
-  e.preventDefault(); if (!target) return;
-  wheelAcc += e.deltaY; const p = toDevice(e);
-  clearTimeout(wheelT);
-  wheelT = setTimeout(async () => {
-    const dy = Math.max(-0.6, Math.min(0.6, wheelAcc / 600)) * img.naturalHeight; wheelAcc = 0;
-    try { await invoke('control_swipe', { serial: target, x1: p.x, y1: p.y, x2: p.x, y2: Math.round(p.y - dy), ms: 220 }); } catch (err) { toast(String(err)); }
-    after();
-  }, 90);
-}, { passive: false });
-
-const sendKey = async (key) => { if (!target) return; try { await invoke('control_key', { serial: target, key }); } catch (e) { toast(String(e)); } after(); };
-document.querySelectorAll('[data-key]').forEach(b => b.onclick = () => sendKey(b.dataset.key));
-let typed = '', typeT = null;
-$('screen').addEventListener('keydown', (e) => {
-  if (!target || e.metaKey || e.ctrlKey) return;
-  const map = { Backspace: 'del', Enter: 'enter', Escape: 'back', Tab: 'tab', ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' };
-  if (map[e.key]) { e.preventDefault(); flushTyped().then(() => sendKey(map[e.key])); return; }
-  if (e.key.length === 1) { e.preventDefault(); typed += e.key; clearTimeout(typeT); typeT = setTimeout(flushTyped, 160); }
-});
-async function flushTyped() {
-  clearTimeout(typeT); if (!typed) return; const t = typed; typed = '';
-  try { await invoke('control_text', { serial: target, text: t }); } catch (e) { toast(String(e)); } after();
-}
-const sendText = async () => { const t = $('text-in').value; if (!t || !target) return; await call('control_text', { serial: target, text: t }).catch(() => {}); $('text-in').value = ''; after(); };
+document.querySelectorAll('[data-key]').forEach(b => b.onclick = () => act(target, 'key', { key: b.dataset.key }));
+const sendText = async () => { const t = $('text-in').value; if (!t || !target) return; $('text-in').value = ''; await act(target, 'text', { text: t }); };
 $('text-send').onclick = sendText; $('text-in').onkeydown = (e) => { if (e.key === 'Enter') sendText(); };
 const runShell = async () => {
   const c = $('sh-in').value.trim(); if (!c || !target) return;
   const out = $('sh-out'); out.hidden = false; out.textContent = '$ ' + c + '\n…';
   try { const r = await invoke('control_shell', { serial: target, command: c }); out.textContent = `$ ${c}\n${r.output || ''}${r.code ? `\n[exit ${r.code}]` : ''}`; }
   catch (e) { out.textContent = `$ ${c}\n${e}`; }
-  after();
+  streams.get(target)?.kick(250);
 };
 $('sh-run').onclick = runShell; $('sh-in').onkeydown = (e) => { if (e.key === 'Enter') runShell(); };
 $('shot-btn').onclick = busy($('shot-btn'), async () => { if (!target) return; const p = await call('control_save_screenshot', { serial: target }); toast('Saved ' + p.split('/').pop() + ' to Desktop'); });
+
+// ---------- Status card ----------
+const pings = [];
+async function ping() {
+  let ms = null;
+  try { ms = await invoke('gateway_ping'); } catch {}
+  pings.push(ms); if (pings.length > 18) pings.shift();
+  $('sc-ping').textContent = ms == null ? '—' : `${ms} ms`;
+  const max = Math.max(60, ...pings.filter(p => p != null));
+  const slots = [...Array(18 - pings.length).fill(undefined), ...pings];
+  $('sc-spark').replaceChildren(...slots.map((p, i) => {
+    const b = el('i', { className: i === slots.length - 1 ? 'last' : '' });
+    b.style.height = p == null ? '2px' : Math.max(3, Math.round(p / max * 20)) + 'px';
+    if (p === null) b.style.background = 'rgba(250,84,36,.5)';
+    return b;
+  }));
+}
+$('status-card').onclick = () => show('settings');
 
 // ---------- Automation & settings ----------
 $('auto-switch').onclick = async () => {
@@ -518,14 +671,29 @@ $('gw-save').onclick = async () => {
   await call('save_settings', { settings: { ...s, gateway_url: $('gw').value } });
   toast('Saved. Reconnecting…'); refresh();
 };
+$('gw-token-save').onclick = async () => {
+  const s = await invoke('settings'), t = $('gw-token').value.trim();
+  await call('save_settings', { settings: { ...s, gateway_token: t || null } });
+  $('gw-token').value = ''; $('gw-token').placeholder = t ? 'Token saved' : 'Gateway token (only if the gateway asks for one)'; toast('Saved. Reconnecting…'); refresh();
+};
+$('gw-reset').onclick = async () => {
+  const s = await invoke('settings');
+  await call('save_settings', { settings: { ...s, gateway_url: $('gw-default').textContent } });
+  $('gw').value = $('gw-default').textContent; toast('Using the default gateway. Reconnecting…'); refresh();
+};
 document.querySelectorAll('[data-copy]').forEach(b => b.onclick = () => { navigator.clipboard.writeText(b.dataset.copy); toast('Copied'); });
 async function refreshLog() { const l = $('log'); l.textContent = (await invoke('logs')).join('\n') || 'Nothing yet.'; l.scrollTop = l.scrollHeight; }
 
 async function refresh() {
   state = await invoke('status');
-  $('conn-dot').className = 'dot ' + (state.connected ? 'on' : 'off');
-  $('conn-text').textContent = state.connected ? 'Gateway connected' : 'Gateway offline';
-  $('version').textContent = 'Version ' + state.version;
+  $('sc-pill').classList.toggle('off', !state.connected);
+  $('conn-text').textContent = state.connected ? 'Live' : 'Offline';
+  $('sc-host').textContent = state.gateway.replace(/^wss?:\/\//, '').replace(/\/ws\/?$/, '');
+  $('sc-host').title = state.gateway;
+  const online = state.devices.filter(d => d.online).length;
+  $('sc-phones').textContent = state.devices.length ? `${online}/${state.devices.length}` : '0';
+  $('sc-auto').textContent = state.automation ? 'On' : 'Off';
+  $('version').textContent = 'v' + state.version;
   $('about-version').textContent = state.version;
   $('about-id').textContent = state.id;
   $('auto-switch').classList.toggle('on', state.automation);
@@ -538,7 +706,9 @@ async function refresh() {
   const cli = await invoke('cli_info');
   $('cli-hint').textContent = cli.on_path ? 'The pairspan command is on your PATH.' : 'Run install.sh to add the pairspan command to your PATH' + (cli.bundled ? ` (bundled at ${cli.bundled}).` : '.');
   $('about-socket').textContent = cli.socket;
+  $('gw-default').textContent = await invoke('default_gateway');
   await refresh(); show('phones');
+  ping(); setInterval(ping, 5000);
   await listen('pairspan://event', (e) => {
     const ev = e.payload;
     if (ev.type === 'log') { const l = $('log'); l.textContent += (l.textContent ? '\n' : '') + ev.line; l.scrollTop = l.scrollHeight; }

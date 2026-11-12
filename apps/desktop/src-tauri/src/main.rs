@@ -60,6 +60,33 @@ fn save_settings(agent: State<'_, AgentState>, settings: Settings) -> CmdResult<
 }
 
 #[tauri::command]
+fn default_gateway() -> &'static str {
+    store::DEFAULT_GATEWAY
+}
+
+/// TCP connect time to the gateway host, in milliseconds (a cheap latency figure for the status card).
+#[tauri::command]
+async fn gateway_ping(agent: State<'_, AgentState>) -> CmdResult<u64> {
+    let url = agent.settings().gateway_url;
+    let (tls, rest) = match url.split_once("://") {
+        Some((scheme, rest)) => (scheme == "wss", rest),
+        None => return Err("bad gateway url".into()),
+    };
+    let host = rest.split('/').next().unwrap_or_default();
+    let addr = if host.rsplit_once(':').is_some_and(|(_, p)| p.parse::<u16>().is_ok()) {
+        host.to_string()
+    } else {
+        format!("{host}:{}", if tls { 443 } else { 80 })
+    };
+    let start = std::time::Instant::now();
+    tokio::time::timeout(std::time::Duration::from_secs(4), tokio::net::TcpStream::connect(addr))
+        .await
+        .map_err(|_| "timeout".to_string())?
+        .map_err(err)?;
+    Ok(start.elapsed().as_millis() as u64)
+}
+
+#[tauri::command]
 async fn usb_devices() -> CmdResult<Vec<adb::UsbDevice>> {
     adb::usb_devices().await.map_err(err)
 }
@@ -301,6 +328,8 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             status,
             logs,
+            default_gateway,
+            gateway_ping,
             start_pairing,
             cancel_pairing,
             unpair,
