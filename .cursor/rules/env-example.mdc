@@ -5,8 +5,8 @@ alwaysApply: true
 
 # Env files
 
-- Android release signing and gateway values: `apps/android/.env.example` (git-ignored; template in `apps/android/.env.template`). CI writes it from secrets.
-- Gateway container: `temp.env` next to `docker-compose.yml` (written by the devops pipeline, git-ignored).
+- Android release signing: `apps/android/.env.example` (git-ignored; template in `apps/android/.env.template`). CI writes it from secrets.
 - Desktop app settings live in `~/Library/Application Support/Pairspan/settings.json`, not in the repo.
+- The Supabase URL and publishable key in `crates/core/src/signal.rs` and `apps/android/.../link/Realtime.kt` are public by design; never add a secret or service-role key.
 
-Never commit keystores, `GATEWAY_TOKEN`, ADB keys or device identifiers. The live token is the GitHub secret `GATEWAY_TOKEN`.
+Never commit keystores, ADB keys or device identifiers.

@@ -2,24 +2,14 @@ package com.pairspan.app.core
 
 import java.nio.ByteBuffer
 
-/** Framing of docs/protocol.md: relay frames on the gateway, channels inside DATA. */
+/** Framing of docs/protocol.md (channels inside DATA) and the signalling channel names. */
 object Wire {
-    const val FRAME_RELAY: Byte = 0x01
     const val CH_RPC: Byte = 0x00
     const val CH_OPEN: Byte = 0x01
     const val CH_DATA: Byte = 0x02
     const val CH_CLOSE: Byte = 0x03
-    const val MAX_CHUNK = 64 * 1024
-
-    fun relay(peer: String, payload: ByteArray): ByteArray =
-        byteArrayOf(FRAME_RELAY) + peer.unhex() + payload
-
-    class Relay(val peer: String, val payload: ByteArray)
-
-    fun parseRelay(frame: ByteArray): Relay? {
-        if (frame.size < 18 || frame[0] != FRAME_RELAY) return null
-        return Relay(frame.copyOfRange(1, 17).hex(), frame.copyOfRange(17, frame.size))
-    }
+    /** With framing and tag a frame stays under the 16 KiB every WebRTC stack accepts. */
+    const val MAX_CHUNK = 16 * 1024 - 64
 
     fun channel(channel: Byte, stream: Int, body: ByteArray): ByteArray =
         ByteBuffer.allocate(5 + body.size).put(channel).putInt(stream).put(body).array()
@@ -33,4 +23,11 @@ object Wire {
         val sid = buf.getInt()
         return Channel(ch, sid, plain.copyOfRange(5, plain.size))
     }
+
+    /** Channel shared by one computer and this phone; only the two know both keys. */
+    fun linkName(pcPub: ByteArray, phonePub: ByteArray): String =
+        "l:" + sha256("pairspan/v2/link".toByteArray(), pcPub, phonePub).hex().take(40)
+
+    /** Channel where the phone and computer exchange keys during the USB pairing. */
+    fun roomName(room: String): String = "r:" + room.take(40)
 }

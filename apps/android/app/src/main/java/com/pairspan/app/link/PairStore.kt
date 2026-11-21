@@ -2,10 +2,8 @@ package com.pairspan.app.link
 
 import android.content.Context
 import android.content.SharedPreferences
-import com.pairspan.app.BuildConfig
 import com.pairspan.app.core.P256
 import com.pairspan.app.core.hex
-import com.pairspan.app.core.peerId
 import com.pairspan.app.core.unhex
 import org.json.JSONArray
 import org.json.JSONObject
@@ -13,7 +11,7 @@ import java.security.KeyPair
 
 data class PairedPc(val id: String, val pub: String, val name: String, val os: String, val pairedAt: Long)
 
-/** App-private state: identity key, gateway, paired computers. Not backed up (allowBackup=false). */
+/** App-private state: identity key, the on/off switch, paired computers. Not backed up (allowBackup=false). */
 class PairStore(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences("pairspan", Context.MODE_PRIVATE)
 
@@ -33,13 +31,6 @@ class PairStore(context: Context) {
     }
 
     val publicKey: ByteArray get() = P256.compress(identity.public)
-    val deviceId: String get() = peerId(publicKey)
-
-    var gatewayUrl: String
-        get() = prefs.getString("gateway", null) ?: BuildConfig.GATEWAY_URL
-        set(v) = prefs.edit().putString("gateway", v).apply()
-
-    val gatewayToken: String get() = BuildConfig.GATEWAY_TOKEN
 
     var enabled: Boolean
         get() = prefs.getBoolean("enabled", true)

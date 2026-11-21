@@ -13,22 +13,9 @@ val localEnv = Properties().apply {
     if (localFile.exists()) localFile.inputStream().use { load(it) }
 }
 
-/** `https://host` → `wss://host/ws` (the gateway's WebSocket endpoint). */
-fun toWebSocketUrl(base: String): String {
-    val trimmed = base.trim().trimEnd('/')
-    val ws = when {
-        trimmed.startsWith("https://") -> "wss://" + trimmed.removePrefix("https://")
-        trimmed.startsWith("http://") -> "ws://" + trimmed.removePrefix("http://")
-        else -> trimmed
-    }
-    return if (ws.endsWith("/ws")) ws else "$ws/ws"
-}
-
 fun env(name: String): String =
     (System.getenv(name) ?: localEnv.getProperty(name) ?: "").trim()
 
-val gatewayUrl = toWebSocketUrl(env("GATEWAY_PUBLIC_URL").ifEmpty { env("GATEWAY_URL") }.ifEmpty { "https://pairspan.ferhatozcelik.com" }).replace("\"", "\\\"")
-val gatewayToken = env("GATEWAY_TOKEN").replace("\"", "\\\"")
 val keystoreFileName = env("KEYSTORE_FILE")
 val releaseStorePassword = env("KEYSTORE_PASSWORD")
 val releaseKeyAlias = env("KEY_ALIAS")
@@ -44,11 +31,11 @@ android {
         applicationId = "com.pairspan"
         minSdk = 26
         targetSdk = 35
-        // versionCode keeps rising so 1.0.0 installs over earlier builds; versionName restarts at 1.0.0.
-        versionCode = 8
-        versionName = "1.0.0"
-        buildConfigField("String", "GATEWAY_URL", "\"$gatewayUrl\"")
-        buildConfigField("String", "GATEWAY_TOKEN", "\"$gatewayToken\"")
+        // versionCode only ever rises so new builds install over old ones.
+        versionCode = 9
+        versionName = "1.1.0"
+        // WebRTC ships native code per ABI; phones are ARM.
+        ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
     }
 
     signingConfigs {
@@ -90,6 +77,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     debugImplementation("androidx.compose.ui:ui-tooling")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("io.getstream:stream-webrtc-android:1.3.8")
     implementation("androidx.annotation:annotation:1.9.1")
 
     testImplementation("junit:junit:4.13.2")

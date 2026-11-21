@@ -341,6 +341,8 @@ mod tests {
             "peer_id_s_i": crate::identity::PeerId::from_pubkey(&s_i_pub).to_string(),
             "hs_init": to_hex(&hs_init), "hs_resp": to_hex(&hs_resp),
             "data_i2r_pairspan": to_hex(&data_i2r), "data_r2i_android": to_hex(&data_r2i),
+            "link_s_i_s_r": crate::wire::link_name(&s_i_pub, &s_r_pub),
+            "room_name": crate::wire::room_name(&room_id(&secret)),
         });
         let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../docs/test-vectors.json");
         let text = serde_json::to_string_pretty(&v).unwrap() + "\n";

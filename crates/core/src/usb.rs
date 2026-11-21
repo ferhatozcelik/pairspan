@@ -10,6 +10,7 @@ use std::time::Duration;
 
 const PACKAGE: &str = "com.pairspan";
 const RECEIVER: &str = "com.pairspan/com.pairspan.app.link.PairReceiver";
+const ACTIVITY: &str = "com.pairspan/com.pairspan.app.ui.MainActivity";
 const RELEASES: &str = "https://api.github.com/repos/ferhatozcelik/pairspan/releases/latest";
 
 impl Agent {
@@ -59,8 +60,12 @@ impl Agent {
         let serial = usb.serial.as_str();
         let latest = latest_release().await.ok();
         let installed = installed_version(serial).await;
-        let wanted = latest.as_ref().map(|(v, _)| v.as_str());
-        if installed.is_none() || (wanted.is_some() && installed.as_deref() != wanted) {
+        let outdated = match (&installed, &latest) {
+            (Some(have), Some((want, _))) => version(have) < version(want),
+            (None, _) => true,
+            (Some(_), None) => false,
+        };
+        if outdated {
             self.set_step(usb, "install", None);
             let (_, url) = latest.context("Could not reach GitHub to download the Android app.")?;
             install_apk(serial, &url).await?;
@@ -70,6 +75,10 @@ impl Agent {
             let info = self.start_pairing().await?;
             let me = self.id().to_string();
             let push = async {
+                // In the foreground the app may start its connection service (Android 12+), and the
+                // user sees the setup steps on the phone.
+                adb::run(Some(serial), &["shell", "am", "start", "-n", ACTIVITY], Duration::from_secs(10)).await?.ok()?;
+                tokio::time::sleep(Duration::from_millis(800)).await;
                 adb::run(Some(serial), &["shell", "am", "broadcast", "-n", RECEIVER, "--es", "secret", &info.code, "--es", "pc", &me], Duration::from_secs(10))
                     .await?
                     .ok()
@@ -89,8 +98,16 @@ impl Agent {
         }
         self.set_step(usb, "adb", None);
         crate::automation::usb_prepare(serial).await?;
+        // adbd now listens on 5555, so the tunnel's adb device can come up.
+        if let Some(d) = self.device_by_usb(serial) {
+            self.reconnect_adb(d.serial()).await;
+        }
         Ok(())
     }
+}
+
+fn version(v: &str) -> Vec<u64> {
+    v.split(['.', '-']).map(|n| n.parse().unwrap_or(0)).collect()
 }
 
 /// `(version, apk url)` of the latest GitHub release.

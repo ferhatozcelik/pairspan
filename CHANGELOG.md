@@ -2,6 +2,20 @@
 
 All notable changes to Pairspan are documented here. This project uses [semantic versions](https://semver.org/).
 
+## [1.1.0] — 2026-11-21
+
+No server of our own any more. Pair your phones again (plug them in once).
+
+### Changed
+- Signalling runs on Supabase Realtime (presence + broadcast); data goes directly between the computer and the phone over a WebRTC data channel. The end-to-end encryption above it is unchanged.
+- Pairing happens over the USB cable: plug a phone in and the desktop app installs or updates the Android app, pairs both sides and turns on wireless ADB by itself. No QR codes or typed codes.
+- Desktop: an on/off switch, step-by-step USB setup, About with an update check. The gateway, automation, logs and QR panels are gone.
+- Android: an on/off switch and every setup step with its state (USB debugging, paired computer, wireless ADB, notifications, battery). No QR scanner, gateway address or device id.
+- Website and `install.sh` are on GitHub Pages: https://ferhatozcelik.github.io/pairspan/
+
+### Removed
+- The Rust gateway, its Docker image and the VPS deploy workflow.
+
 ## [1.0.0] — 2026-11-12
 
 A clean start. Earlier builds (Electron desktop app, Node gateway, protocol v2) are not compatible; pair your phones again.

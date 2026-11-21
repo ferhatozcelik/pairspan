@@ -58,7 +58,10 @@ class CryptoVectorsTest {
         assertEquals(Wire.CH_DATA, c.channel)
         assertEquals(7, c.stream)
         assertArrayEquals(byteArrayOf(1, 2, 3), c.body)
-        val r = Wire.parseRelay(Wire.relay(v.getString("peer_id_s_i"), byteArrayOf(9)))!!
-        assertEquals(v.getString("peer_id_s_i"), r.peer)
+    }
+
+    @Test fun signallingChannelNamesMatchRust() {
+        assertEquals(v.getString("link_s_i_s_r"), Wire.linkName(hex("s_i_pub"), hex("s_r_pub")))
+        assertEquals(v.getString("room_name"), Wire.roomName(Pairing.room(v.getString("secret"))))
     }
 }

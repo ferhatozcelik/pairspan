@@ -1,7 +1,7 @@
 {
   "name": "pairspan-web",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Pairspan website and docs (Next.js static export, published to GitHub Pages).",
   "scripts": {
     "dev": "next dev",

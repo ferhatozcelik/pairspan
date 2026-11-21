@@ -232,3 +232,38 @@ async fn pair_and_tunnel_over_supabase_and_webrtc() {
     agent.remove_device(device.id, false).await.unwrap();
     assert!(agent.status().devices.is_empty());
 }
+
+/// With a phone on USB (USB debugging allowed, Pairspan app installed or installable):
+/// `cargo test -p pairspan-core --test link real_phone -- --ignored --nocapture`.
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+#[ignore = "needs a phone on USB and internet"]
+async fn real_phone_over_usb() {
+    let dir = tempfile::tempdir().unwrap();
+    let agent = Agent::start(dir.path(), Options::default()).unwrap();
+    let mut device = None;
+    for _ in 0..240 {
+        tokio::time::sleep(Duration::from_millis(500)).await;
+        let s = agent.status();
+        if let Some(setup) = &s.setup {
+            println!("setup: {} {} {:?}", setup.model, setup.step, setup.error);
+            assert_ne!(setup.step, "failed", "{:?}", setup.error);
+        }
+        if s.setup.as_ref().is_some_and(|u| u.step == "done") && s.devices.iter().any(|d| d.online) {
+            device = s.devices.into_iter().find(|d| d.online);
+            break;
+        }
+    }
+    let device = device.expect("phone did not come online");
+    let mut model = String::new();
+    for _ in 0..20 {
+        let out = pairspan_core::adb::run(Some(&device.serial), &["shell", "getprop", "ro.product.model"], Duration::from_secs(10)).await.unwrap();
+        model = out.text().trim().to_string();
+        if !model.is_empty() {
+            break;
+        }
+        tokio::time::sleep(Duration::from_secs(1)).await;
+    }
+    println!("adb over the tunnel: {model}");
+    assert!(!model.is_empty());
+    agent.remove_device(device.device.id, true).await.unwrap();
+}

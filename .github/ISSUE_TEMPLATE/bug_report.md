@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Something in Pairspan 1.0.0 does not behave as documented
+about: Something in Pairspan does not behave as documented
 title: ""
 labels: bug
 ---
@@ -9,8 +9,8 @@ labels: bug
 
 - [ ] Android
 - [ ] macOS desktop
-- [ ] Gateway
-- [ ] Docs or pairing page
+- [ ] USB setup or pairing
+- [ ] Website or docs
 
 ## What happened
 
@@ -20,8 +20,7 @@ labels: bug
 
 - Pairspan:
 - Android or macOS version:
-- Gateway commit or `npm` version:
 
 ## Notes
 
-Do not paste gateway tokens, ADB keys, or device identifiers.
+Do not paste ADB keys or device identifiers.

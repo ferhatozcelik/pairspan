@@ -155,13 +155,19 @@ fn now_string() -> String {
     secs.to_string()
 }
 
+/// The name people gave the computer ("Ferhat's MacBook Pro"); `hostname` can be an IP on macOS.
 fn host_name() -> String {
-    std::process::Command::new("hostname")
-        .output()
-        .ok()
-        .and_then(|o| String::from_utf8(o.stdout).ok())
-        .map(|s| s.trim().trim_end_matches(".local").to_string())
-        .filter(|s| !s.is_empty())
+    let run = |cmd: &str, args: &[&str]| {
+        std::process::Command::new(cmd)
+            .args(args)
+            .output()
+            .ok()
+            .and_then(|o| String::from_utf8(o.stdout).ok())
+            .map(|s| s.trim().trim_end_matches(".local").to_string())
+            .filter(|s| !s.is_empty())
+    };
+    (if cfg!(target_os = "macos") { run("scutil", &["--get", "ComputerName"]) } else { None })
+        .or_else(|| run("hostname", &[]))
         .unwrap_or_else(|| "PC".to_string())
 }
 
@@ -616,17 +622,24 @@ impl Agent {
         let device = self.store.lock().unwrap().device(&src).cloned();
         if let Some(d) = device {
             self.log(format!("{} is online (direct, end-to-end encrypted)", d.name));
-            if self.manage_adb {
-                let serial = d.serial();
-                tokio::spawn(async move {
-                    // adb keeps a dropped TCP device listed as "offline" and answers a new `connect`
-                    // with "already connected", so drop the stale entry first.
-                    let _ = crate::adb::run(None, &["disconnect", &serial], Duration::from_secs(5)).await;
-                    let _ = crate::adb::run(None, &["connect", &serial], Duration::from_secs(10)).await;
-                });
-            }
+            let agent = self.me.upgrade();
+            tokio::spawn(async move {
+                if let Some(a) = agent {
+                    a.reconnect_adb(d.serial()).await;
+                }
+            });
         }
         self.changed();
+    }
+
+    /// adb keeps a dropped TCP device listed as "offline" and answers a new `connect` with
+    /// "already connected", so drop the stale entry first.
+    pub(crate) async fn reconnect_adb(&self, serial: String) {
+        if !self.manage_adb {
+            return;
+        }
+        let _ = crate::adb::run(None, &["disconnect", &serial], Duration::from_secs(5)).await;
+        let _ = crate::adb::run(None, &["connect", &serial], Duration::from_secs(10)).await;
     }
 
     async fn on_plain(&self, peer: &Arc<Peer>, plain: &[u8]) {

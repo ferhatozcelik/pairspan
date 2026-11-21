@@ -2833,7 +2833,7 @@ dependencies = [
 
 [[package]]
 name = "pairspan-cli"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -2845,7 +2845,7 @@ dependencies = [
 
 [[package]]
 name = "pairspan-core"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "aes-gcm",
  "anyhow",
@@ -2871,7 +2871,7 @@ dependencies = [
 
 [[package]]
 name = "pairspan-desktop"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "anyhow",
  "dirs 5.0.1",
