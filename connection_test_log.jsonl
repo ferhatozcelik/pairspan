@@ -1,0 +1,50 @@
+{"timestamp": "2026-11-21T23:19:16.174980+00:00", "serial": "RFCY7116K5B", "transport": "USB Direct", "sample": 1, "status": "OK", "latency_ms": 48.45, "error": null}
+{"timestamp": "2026-11-21T23:19:16.734459+00:00", "serial": "RFCY7116K5B", "transport": "USB Direct", "sample": 2, "status": "OK", "latency_ms": 90.91, "error": null}
+{"timestamp": "2026-11-21T23:19:17.333718+00:00", "serial": "RFCY7116K5B", "transport": "USB Direct", "sample": 3, "status": "OK", "latency_ms": 92.14, "error": null}
+{"timestamp": "2026-11-21T23:19:17.936781+00:00", "serial": "RFCY7116K5B", "transport": "USB Direct", "sample": 4, "status": "OK", "latency_ms": 73.36, "error": null}
+{"timestamp": "2026-11-21T23:19:18.521017+00:00", "serial": "RFCY7116K5B", "transport": "USB Direct", "sample": 5, "status": "OK", "latency_ms": 92.19, "error": null}
+{"timestamp": "2026-11-21T23:19:19.124194+00:00", "serial": "RFCY7116K5B", "transport": "USB Direct", "sample": 6, "status": "OK", "latency_ms": 96.75, "error": null}
+{"timestamp": "2026-11-21T23:19:19.732049+00:00", "serial": "RFCY7116K5B", "transport": "USB Direct", "sample": 7, "status": "OK", "latency_ms": 94.92, "error": null}
+{"timestamp": "2026-11-21T23:19:20.337480+00:00", "serial": "RFCY7116K5B", "transport": "USB Direct", "sample": 8, "status": "OK", "latency_ms": 107.45, "error": null}
+{"timestamp": "2026-11-21T23:19:20.955508+00:00", "serial": "RFCY7116K5B", "transport": "USB Direct", "sample": 9, "status": "OK", "latency_ms": 72.08, "error": null}
+{"timestamp": "2026-11-21T23:19:21.537922+00:00", "serial": "RFCY7116K5B", "transport": "USB Direct", "sample": 10, "status": "OK", "latency_ms": 89.07, "error": null}
+{"timestamp": "2026-11-21T23:19:22.138096+00:00", "serial": "RFCY7116K5B", "transport": "USB Direct", "sample": 11, "status": "OK", "latency_ms": 93.1, "error": null}
+{"timestamp": "2026-11-21T23:19:22.742409+00:00", "serial": "RFCY7116K5B", "transport": "USB Direct", "sample": 12, "status": "OK", "latency_ms": 101.62, "error": null}
+{"timestamp": "2026-11-21T23:19:23.354536+00:00", "serial": "RFCY7116K5B", "transport": "USB Direct", "sample": 13, "status": "OK", "latency_ms": 94.89, "error": null}
+{"timestamp": "2026-11-21T23:19:23.956636+00:00", "serial": "RFCY7116K5B", "transport": "USB Direct", "sample": 14, "status": "OK", "latency_ms": 80.1, "error": null}
+{"timestamp": "2026-11-21T23:19:24.544042+00:00", "serial": "RFCY7116K5B", "transport": "USB Direct", "sample": 15, "status": "OK", "latency_ms": 92.86, "error": null}
+{"timestamp": "2026-11-21T23:19:25.147478+00:00", "serial": "RFCY7116K5B", "transport": "USB Direct", "sample": 16, "status": "OK", "latency_ms": 91.99, "error": null}
+{"timestamp": "2026-11-21T23:19:25.750549+00:00", "serial": "RFCY7116K5B", "transport": "USB Direct", "sample": 17, "status": "OK", "latency_ms": 108.69, "error": null}
+{"timestamp": "2026-11-21T23:19:26.367026+00:00", "serial": "RFCY7116K5B", "transport": "USB Direct", "sample": 18, "status": "OK", "latency_ms": 91.94, "error": null}
+{"timestamp": "2026-11-21T23:19:26.967124+00:00", "serial": "RFCY7116K5B", "transport": "USB Direct", "sample": 19, "status": "OK", "latency_ms": 77.22, "error": null}
+{"timestamp": "2026-11-21T23:19:27.554612+00:00", "serial": "RFCY7116K5B", "transport": "USB Direct", "sample": 20, "status": "OK", "latency_ms": 101.24, "error": null}
+{"timestamp": "2026-11-21T23:19:28.166973+00:00", "serial": "RFCY7116K5B", "transport": "USB Direct", "sample": 21, "status": "OK", "latency_ms": 102.81, "error": null}
+{"timestamp": "2026-11-21T23:19:28.776545+00:00", "serial": "RFCY7116K5B", "transport": "USB Direct", "sample": 22, "status": "OK", "latency_ms": 65.06, "error": null}
+{"timestamp": "2026-11-21T23:19:29.351976+00:00", "serial": "RFCY7116K5B", "transport": "USB Direct", "sample": 23, "status": "OK", "latency_ms": 65.85, "error": null}
+{"timestamp": "2026-11-21T23:19:29.925353+00:00", "serial": "RFCY7116K5B", "transport": "USB Direct", "sample": 24, "status": "OK", "latency_ms": 69.83, "error": null}
+{"timestamp": "2026-11-21T23:19:30.505685+00:00", "serial": "RFCY7116K5B", "transport": "USB Direct", "sample": 25, "status": "OK", "latency_ms": 97.39, "error": null}
+{"timestamp": "2026-11-21T23:19:32.690043+00:00", "serial": "192.168.1.102:5555", "transport": "Wireless ADB (Wi-Fi 5GHz)", "sample": 1, "status": "OK", "latency_ms": 101.86, "error": null}
+{"timestamp": "2026-11-21T23:19:33.294961+00:00", "serial": "192.168.1.102:5555", "transport": "Wireless ADB (Wi-Fi 5GHz)", "sample": 2, "status": "OK", "latency_ms": 85.6, "error": null}
+{"timestamp": "2026-11-21T23:19:33.890702+00:00", "serial": "192.168.1.102:5555", "transport": "Wireless ADB (Wi-Fi 5GHz)", "sample": 3, "status": "OK", "latency_ms": 211.36, "error": null}
+{"timestamp": "2026-11-21T23:19:34.609890+00:00", "serial": "192.168.1.102:5555", "transport": "Wireless ADB (Wi-Fi 5GHz)", "sample": 4, "status": "OK", "latency_ms": 208.52, "error": null}
+{"timestamp": "2026-11-21T23:19:35.329440+00:00", "serial": "192.168.1.102:5555", "transport": "Wireless ADB (Wi-Fi 5GHz)", "sample": 5, "status": "OK", "latency_ms": 130.42, "error": null}
+{"timestamp": "2026-11-21T23:19:35.962453+00:00", "serial": "192.168.1.102:5555", "transport": "Wireless ADB (Wi-Fi 5GHz)", "sample": 6, "status": "OK", "latency_ms": 188.64, "error": null}
+{"timestamp": "2026-11-21T23:19:36.659848+00:00", "serial": "192.168.1.102:5555", "transport": "Wireless ADB (Wi-Fi 5GHz)", "sample": 7, "status": "OK", "latency_ms": 199.25, "error": null}
+{"timestamp": "2026-11-21T23:19:37.369752+00:00", "serial": "192.168.1.102:5555", "transport": "Wireless ADB (Wi-Fi 5GHz)", "sample": 8, "status": "OK", "latency_ms": 159.65, "error": null}
+{"timestamp": "2026-11-21T23:19:38.032487+00:00", "serial": "192.168.1.102:5555", "transport": "Wireless ADB (Wi-Fi 5GHz)", "sample": 9, "status": "OK", "latency_ms": 265.68, "error": null}
+{"timestamp": "2026-11-21T23:19:38.808161+00:00", "serial": "192.168.1.102:5555", "transport": "Wireless ADB (Wi-Fi 5GHz)", "sample": 10, "status": "OK", "latency_ms": 316.55, "error": null}
+{"timestamp": "2026-11-21T23:19:39.627022+00:00", "serial": "192.168.1.102:5555", "transport": "Wireless ADB (Wi-Fi 5GHz)", "sample": 11, "status": "OK", "latency_ms": 90.63, "error": null}
+{"timestamp": "2026-11-21T23:19:40.227072+00:00", "serial": "192.168.1.102:5555", "transport": "Wireless ADB (Wi-Fi 5GHz)", "sample": 12, "status": "OK", "latency_ms": 226.26, "error": null}
+{"timestamp": "2026-11-21T23:19:40.964943+00:00", "serial": "192.168.1.102:5555", "transport": "Wireless ADB (Wi-Fi 5GHz)", "sample": 13, "status": "OK", "latency_ms": 88.8, "error": null}
+{"timestamp": "2026-11-21T23:19:41.562972+00:00", "serial": "192.168.1.102:5555", "transport": "Wireless ADB (Wi-Fi 5GHz)", "sample": 14, "status": "OK", "latency_ms": 199.71, "error": null}
+{"timestamp": "2026-11-21T23:19:42.265688+00:00", "serial": "192.168.1.102:5555", "transport": "Wireless ADB (Wi-Fi 5GHz)", "sample": 15, "status": "OK", "latency_ms": 203.96, "error": null}
+{"timestamp": "2026-11-21T23:19:42.972417+00:00", "serial": "192.168.1.102:5555", "transport": "Wireless ADB (Wi-Fi 5GHz)", "sample": 16, "status": "OK", "latency_ms": 207.12, "error": null}
+{"timestamp": "2026-11-21T23:19:43.690338+00:00", "serial": "192.168.1.102:5555", "transport": "Wireless ADB (Wi-Fi 5GHz)", "sample": 17, "status": "OK", "latency_ms": 196.86, "error": null}
+{"timestamp": "2026-11-21T23:19:44.395941+00:00", "serial": "192.168.1.102:5555", "transport": "Wireless ADB (Wi-Fi 5GHz)", "sample": 18, "status": "OK", "latency_ms": 186.44, "error": null}
+{"timestamp": "2026-11-21T23:19:45.090303+00:00", "serial": "192.168.1.102:5555", "transport": "Wireless ADB (Wi-Fi 5GHz)", "sample": 19, "status": "OK", "latency_ms": 213.53, "error": null}
+{"timestamp": "2026-11-21T23:19:45.811136+00:00", "serial": "192.168.1.102:5555", "transport": "Wireless ADB (Wi-Fi 5GHz)", "sample": 20, "status": "OK", "latency_ms": 197.95, "error": null}
+{"timestamp": "2026-11-21T23:19:46.520542+00:00", "serial": "192.168.1.102:5555", "transport": "Wireless ADB (Wi-Fi 5GHz)", "sample": 21, "status": "OK", "latency_ms": 226.24, "error": null}
+{"timestamp": "2026-11-21T23:19:47.248759+00:00", "serial": "192.168.1.102:5555", "transport": "Wireless ADB (Wi-Fi 5GHz)", "sample": 22, "status": "OK", "latency_ms": 231.08, "error": null}
+{"timestamp": "2026-11-21T23:19:47.982945+00:00", "serial": "192.168.1.102:5555", "transport": "Wireless ADB (Wi-Fi 5GHz)", "sample": 23, "status": "OK", "latency_ms": 37.29, "error": null}
+{"timestamp": "2026-11-21T23:19:48.526312+00:00", "serial": "192.168.1.102:5555", "transport": "Wireless ADB (Wi-Fi 5GHz)", "sample": 24, "status": "OK", "latency_ms": 214.83, "error": null}
+{"timestamp": "2026-11-21T23:19:49.251095+00:00", "serial": "192.168.1.102:5555", "transport": "Wireless ADB (Wi-Fi 5GHz)", "sample": 25, "status": "OK", "latency_ms": 200.66, "error": null}
