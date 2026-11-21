@@ -6,7 +6,7 @@ use anyhow::{bail, Context, Result};
 use base64::{engine::general_purpose::STANDARD as B64, Engine};
 use clap::{Parser, Subcommand};
 use pairspan_core::rpc::Client;
-use pairspan_core::{store, wire};
+use pairspan_core::store;
 use serde_json::{json, Value};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
@@ -26,11 +26,11 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Cmd {
-    /// App, gateway and phone status.
+    /// App, connection and phone status.
     Status,
     /// Paired phones.
     Devices,
-    /// Pair a new phone: shows a QR code to scan with the Pairspan Android app.
+    /// Pair a new phone: waits for it to be plugged in over USB (the app does the rest).
     Pair {
         /// Seconds to wait for the phone.
         #[arg(long, default_value_t = 300)]
@@ -214,12 +214,12 @@ async fn run() -> Result<()> {
                 print(&s, true);
             } else {
                 println!("Pairspan {}  ·  PC id {}", s["version"].as_str().unwrap_or(""), &s["id"].as_str().unwrap_or("")[..8]);
-                println!(
-                    "Gateway   {} ({})",
-                    s["gateway"].as_str().unwrap_or(""),
-                    if s["connected"] == true { "connected" } else { "offline" }
-                );
-                println!("Automation {}", if s["automation"] == true { "allowed" } else { "turned off in the app" });
+                let state = match (s["enabled"] == true, s["connected"] == true) {
+                    (false, _) => "turned off in the app",
+                    (true, true) => "on",
+                    (true, false) => "on, waiting for the internet",
+                };
+                println!("Pairspan  {state}");
                 print_devices(&s["devices"]);
             }
         }
@@ -228,11 +228,7 @@ async fn run() -> Result<()> {
             if j { print(&d, true) } else { print_devices(&d) }
         }
         Cmd::Pair { timeout } => {
-            let info = c.call("pair.start", json!({})).await?;
-            let qr = info["qr"].as_str().unwrap_or("");
-            println!("{}", wire::qr_text(qr));
-            println!("Scan with the Pairspan Android app, or enter the code: {}", info["code"].as_str().unwrap_or(""));
-            println!("Waiting for the phone…");
+            println!("Plug the phone in over USB and allow USB debugging on it. Waiting…");
             let d = c.call("pair.wait", json!({ "timeout": timeout })).await?;
             println!("✓ Paired with {} ({})", d["name"].as_str().unwrap_or("phone"), &d["id"].as_str().unwrap_or("")[..8]);
         }

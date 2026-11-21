@@ -5,7 +5,6 @@ use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
-pub const DEFAULT_GATEWAY: &str = "wss://pairspan.ferhatozcelik.com/ws";
 /// First local TCP port handed to `adb connect` for a paired phone.
 pub const ADB_PORT_BASE: u16 = 47_100;
 
@@ -38,19 +37,13 @@ pub fn write_private(path: &Path, data: &[u8]) -> Result<()> {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Settings {
-    pub gateway_url: String,
-    pub gateway_token: Option<String>,
-    /// Lets the CLI and MCP server reach the app over the local socket.
-    pub automation_enabled: bool,
+    /// The on/off switch: when off, Pairspan leaves the signalling service and closes every link.
+    pub enabled: bool,
 }
 
 impl Default for Settings {
     fn default() -> Self {
-        Self {
-            gateway_url: std::env::var("PAIRSPAN_GATEWAY").unwrap_or_else(|_| DEFAULT_GATEWAY.to_string()),
-            gateway_token: option_env!("PAIRSPAN_GATEWAY_TOKEN").map(str::to_string).filter(|t| !t.is_empty()),
-            automation_enabled: true,
-        }
+        Self { enabled: true }
     }
 }
 
@@ -66,6 +59,9 @@ pub struct Device {
     pub android: String,
     pub adb_port: u16,
     pub paired_at: String,
+    /// The USB serial it was paired over, so plugging it in again only re-enables wireless ADB.
+    #[serde(default)]
+    pub usb_serial: String,
 }
 
 impl Device {
@@ -129,8 +125,7 @@ mod tests {
 
     #[test]
     fn settings_from_older_builds_load_with_defaults() {
-        let old: Settings = serde_json::from_str(r#"{"enabled":true,"clientId":"110bac11465931c10da60293c9dc28b9"}"#).unwrap();
-        assert!(old.gateway_url.starts_with("ws"));
-        assert!(old.automation_enabled);
+        let old: Settings = serde_json::from_str(r#"{"gateway_url":"wss://example.com/ws","automation_enabled":false}"#).unwrap();
+        assert!(old.enabled);
     }
 }

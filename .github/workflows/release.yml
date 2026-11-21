@@ -14,8 +14,6 @@ permissions:
 jobs:
   macos:
     runs-on: macos-latest
-    env:
-      PAIRSPAN_GATEWAY_TOKEN: ${{ secrets.GATEWAY_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -47,11 +45,9 @@ jobs:
       - uses: android-actions/setup-android@v3
         with:
           packages: platform-tools
-      - name: Signing and gateway config
+      - name: Signing config
         working-directory: apps/android
         env:
-          GATEWAY_PUBLIC_URL: ${{ secrets.GATEWAY_PUBLIC_URL }}
-          GATEWAY_TOKEN: ${{ secrets.GATEWAY_TOKEN }}
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
@@ -61,8 +57,6 @@ jobs:
           umask 077
           printf '%s' "$KEYSTORE_BASE64" | base64 --decode > pairspan.keystore
           {
-            printf 'GATEWAY_PUBLIC_URL=%s\n' "$GATEWAY_PUBLIC_URL"
-            printf 'GATEWAY_TOKEN=%s\n' "$GATEWAY_TOKEN"
             printf 'KEYSTORE_FILE=pairspan.keystore\n'
             printf 'KEYSTORE_PASSWORD=%s\n' "$KEYSTORE_PASSWORD"
             printf 'KEY_ALIAS=%s\n' "$KEY_ALIAS"
@@ -92,5 +86,5 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "Pairspan ${GITHUB_REF_NAME#v}" \
-            --notes "See https://pairspan.ferhatozcelik.com/docs/ for setup." || true
+            --notes "Install: curl -fsSL https://ferhatozcelik.github.io/pairspan/install.sh | sh — details in the README." || true
           gh release upload "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" Pairspan-*-macos-arm64.zip pairspan-android-*.apk --clobber

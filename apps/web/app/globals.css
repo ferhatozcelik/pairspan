@@ -71,8 +71,6 @@ h1 { font-size: clamp(3rem, 7vw, 5.8rem); font-weight: 700; line-height: 0.94; l
 h1 em { font-style: normal; display: inline-block; background: var(--ember); color: var(--off-white); padding: 0 0.18em; border-radius: 0.18em; transform: rotate(-1.5deg); }
 .lead { font-size: 1.2rem; color: var(--muted); max-width: 34ch; margin: 0 0 30px; }
 .cta { display: flex; gap: 12px; flex-wrap: wrap; }
-.install-line { margin-top: 18px; font-size: 0.88rem; color: var(--muted); }
-.install-line code { word-break: break-all; background: var(--off-white); border: 1px solid var(--taupe); padding: 3px 8px; border-radius: 8px; color: var(--ink); }
 
 /* terminal */
 .term { background: var(--ink); color: var(--off-white); border-radius: var(--r-l); padding: 18px 22px 24px; box-shadow: 0 40px 80px -30px rgba(22, 22, 22, 0.55); transform: rotate(1.2deg); }
@@ -84,6 +82,11 @@ h1 em { font-style: normal; display: inline-block; background: var(--ember); col
 .term .p { color: var(--ember-soft); }
 .term .c { color: #8f8a82; }
 .term .ok { color: var(--mint-soft); }
+.hero .kicker { margin-bottom: 14px; }
+.term.install .cmd { display: flex; align-items: center; gap: 16px; }
+.term.install code { flex: 1; min-width: 0; font-size: 0.95rem; line-height: 1.6; white-space: nowrap; overflow-x: auto; scrollbar-width: none; user-select: all; }
+.term.install .btn { flex: none; }
+.term.install .btn:hover { background: var(--off-white); color: var(--ink); }
 
 /* strip */
 .strip { background: var(--ink); color: var(--off-white); margin: 40px 0; padding: 18px 0; overflow: hidden; white-space: nowrap; font-weight: 700; font-size: 1.05rem; letter-spacing: -0.02em; }
@@ -122,23 +125,6 @@ details.faq p { color: var(--muted); margin: 10px 0 0 22px; }
 footer { padding: 48px 0 64px; color: var(--muted); font-size: 0.9rem; }
 footer .wrap { display: flex; gap: 20px; flex-wrap: wrap; align-items: center; }
 
-/* docs */
-.docs { display: grid; grid-template-columns: 220px 1fr; gap: 48px; padding: 40px 0 80px; }
-.docs nav { position: sticky; top: 96px; align-self: start; display: flex; flex-direction: column; gap: 8px; font-weight: 600; font-size: 0.95rem; }
-.docs nav a { text-decoration: none; opacity: 0.7; }
-.docs nav a:hover { opacity: 1; color: var(--ember); }
-.docs article { max-width: 760px; }
-.docs h1 { font-size: 3rem; }
-.docs h2 { font-size: 2rem; margin-top: 48px; scroll-margin-top: 90px; }
-.docs h3 { letter-spacing: -0.02em; margin-top: 28px; }
-.docs p, .docs li { color: #2d2a26; }
-.docs pre { background: var(--ink); color: var(--off-white); border-radius: var(--r-m); padding: 18px 20px; overflow-x: auto; font-size: 0.86rem; line-height: 1.65; }
-.docs :not(pre) > code { background: var(--off-white); border: 1px solid var(--taupe); padding: 1px 6px; border-radius: 6px; font-size: 0.88em; }
-.docs table { border-collapse: collapse; width: 100%; font-size: 0.93rem; background: var(--off-white); border-radius: var(--r-m); overflow: hidden; }
-.docs th, .docs td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--taupe); vertical-align: top; }
-.docs th { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
-.note { background: var(--off-white); border-left: 4px solid var(--ember); padding: 14px 18px; border-radius: 0 var(--r-s) var(--r-s) 0; }
-
 @media (max-width: 900px) {
   .hero { grid-template-columns: minmax(0, 1fr); padding-top: 32px; }
   .term { transform: none; }
@@ -146,6 +132,4 @@ footer .wrap { display: flex; gap: 20px; flex-wrap: wrap; align-items: center; }
   h2 { overflow-wrap: anywhere; }
   .card.wide { grid-column: auto; }
   .nav-links a.hide-sm { display: none; }
-  .docs { grid-template-columns: 1fr; }
-  .docs nav { position: static; flex-direction: row; flex-wrap: wrap; gap: 14px; }
 }

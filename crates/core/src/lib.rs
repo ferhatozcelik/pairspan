@@ -7,7 +7,10 @@ pub mod automation;
 pub mod crypto;
 pub mod identity;
 pub mod rpc;
+pub mod rtc;
+pub mod signal;
 pub mod store;
+pub mod usb;
 pub mod wire;
 
-pub use agent::{Agent, Event, Options, Status};
+pub use agent::{Agent, Event, Options, Setup, Status};

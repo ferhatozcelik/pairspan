@@ -1,33 +1,37 @@
-//! The PC agent: one gateway connection, an encrypted session per phone, and a local
-//! TCP port per phone that `adb connect` uses (bytes are tunnelled to the phone's adbd).
+//! The PC agent: a signalling connection (Supabase Realtime), a direct WebRTC link per phone
+//! carrying the encrypted session, and a local TCP port per phone that `adb connect` uses
+//! (bytes are tunnelled to the phone's adbd). Phones are set up once over USB (`usb.rs`).
 
 use crate::crypto::{self, Initiator, Opener, Sealer};
 use crate::identity::{decode_public, Identity, PeerId};
+use crate::signal::{Incoming, Signal};
 use crate::store::{Device, Settings, Store};
-use crate::wire::{self, FromGateway, Role, ToGateway, CH_CLOSE, CH_DATA, CH_OPEN, CH_RPC, MAX_CHUNK};
+use crate::wire::{self, CH_CLOSE, CH_DATA, CH_OPEN, CH_RPC, MAX_CHUNK};
 use anyhow::{anyhow, bail, Context, Result};
-use bytes::Bytes;
-use futures_util::{SinkExt, StreamExt};
+use bytes::{Bytes, BytesMut};
 use p256::SecretKey;
 use serde::Serialize;
-use std::collections::{HashMap, VecDeque};
+use serde_json::{json, Value};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::Path;
-use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, Weak};
 use std::time::{Duration, Instant};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::{broadcast, mpsc, Notify};
 use tokio::task::JoinHandle;
-use tokio_tungstenite::tungstenite::Message;
+use webrtc::data_channel::{DataChannel, DataChannelEvent};
+use webrtc::peer_connection::PeerConnection;
 
-const PAIR_TTL: Duration = Duration::from_secs(300);
+const PAIR_TTL: Duration = Duration::from_secs(120);
+const OPEN_TIMEOUT: Duration = Duration::from_secs(30);
 const MAX_LOG: usize = 400;
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum Event {
-    /// Devices, connection or pairing state changed; UIs re-read `status()`.
+    /// Devices, connection or setup state changed; UIs re-read `status()`.
     Changed,
     Log { line: String },
     Paired { device: Device },
@@ -42,22 +46,30 @@ pub struct DeviceStatus {
     pub online: bool,
 }
 
+/// A phone being set up over USB right now (see `usb.rs`).
+#[derive(Debug, Clone, Serialize)]
+pub struct Setup {
+    pub serial: String,
+    pub model: String,
+    /// `install`, `pair`, `adb`, `done` or `failed`.
+    pub step: &'static str,
+    pub error: Option<String>,
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct Status {
     pub version: &'static str,
     pub id: PeerId,
-    pub gateway: String,
+    pub enabled: bool,
+    /// Connected to the signalling service.
     pub connected: bool,
-    pub automation: bool,
     pub devices: Vec<DeviceStatus>,
-    pub pairing: Option<PairingInfo>,
+    pub setup: Option<Setup>,
 }
 
 #[derive(Debug, Clone, Serialize)]
 pub struct PairingInfo {
     pub code: String,
-    pub qr: String,
-    pub qr_svg: String,
     pub expires_in: u64,
 }
 
@@ -76,8 +88,11 @@ struct Peer {
     pending: Mutex<Option<Initiator>>,
     streams: Mutex<HashMap<u32, mpsc::Sender<Bytes>>>,
     next_stream: AtomicU32,
-    online: AtomicBool,
     ready: AtomicBool,
+    /// The current WebRTC attempt; answers and events from older ones are ignored.
+    generation: AtomicU64,
+    pc: Mutex<Option<Arc<dyn PeerConnection>>>,
+    dc: Mutex<Option<Arc<dyn DataChannel>>>,
 }
 
 impl Peer {
@@ -89,8 +104,10 @@ impl Peer {
             pending: Mutex::new(None),
             streams: Mutex::new(HashMap::new()),
             next_stream: AtomicU32::new(1),
-            online: AtomicBool::new(false),
             ready: AtomicBool::new(false),
+            generation: AtomicU64::new(0),
+            pc: Mutex::new(None),
+            dc: Mutex::new(None),
         }
     }
 }
@@ -102,24 +119,31 @@ pub struct Agent {
     host_name: String,
     store: Mutex<Store>,
     peers: Mutex<HashMap<PeerId, Arc<Peer>>>,
-    out: Mutex<Option<mpsc::Sender<Message>>>,
+    signal: Mutex<Option<Arc<Signal>>>,
+    /// Signalling channel name → the phone on the other end (paired phones and a pairing in progress).
+    links: Mutex<HashMap<String, (PeerId, [u8; 33])>>,
     pairing: Mutex<Option<Pairing>>,
     listeners: Mutex<HashMap<PeerId, JoinHandle<()>>>,
     connected: AtomicBool,
     reconnect: Notify,
     logs: Mutex<VecDeque<String>>,
     events: broadcast::Sender<Event>,
+    pub(crate) setup: Mutex<Option<Setup>>,
+    /// USB serials already handled while plugged in, so a phone is set up once per plug-in.
+    pub(crate) usb_seen: Mutex<HashSet<String>>,
     /// Run `adb connect/disconnect` automatically when a phone comes and goes.
     manage_adb: bool,
 }
 
 pub struct Options {
     pub manage_adb: bool,
+    /// Watch USB and set phones up automatically (the desktop app); the CLI leaves it off.
+    pub watch_usb: bool,
 }
 
 impl Default for Options {
     fn default() -> Self {
-        Self { manage_adb: true }
+        Self { manage_adb: true, watch_usb: true }
     }
 }
 
@@ -155,20 +179,27 @@ impl Agent {
             host_name: host_name(),
             store: Mutex::new(store),
             peers: Mutex::new(HashMap::new()),
-            out: Mutex::new(None),
+            signal: Mutex::new(None),
+            links: Mutex::new(HashMap::new()),
             pairing: Mutex::new(None),
             listeners: Mutex::new(HashMap::new()),
             connected: AtomicBool::new(false),
             reconnect: Notify::new(),
             logs: Mutex::new(VecDeque::new()),
             events,
+            setup: Mutex::new(None),
+            usb_seen: Mutex::new(HashSet::new()),
             manage_adb: options.manage_adb,
         });
         let devices: Vec<Device> = agent.store.lock().unwrap().devices.clone();
-        for d in devices {
-            agent.spawn_listener(&d);
+        for d in &devices {
+            agent.spawn_listener(d);
+            agent.add_link(d.id, &d.public);
         }
-        tokio::spawn(agent.clone().gateway_loop());
+        tokio::spawn(agent.clone().signal_loop());
+        if options.watch_usb {
+            tokio::spawn(agent.clone().usb_loop());
+        }
         Ok(agent)
     }
 
@@ -197,7 +228,7 @@ impl Agent {
         self.logs.lock().unwrap().iter().cloned().collect()
     }
 
-    fn changed(&self) {
+    pub(crate) fn changed(&self) {
         let _ = self.events.send(Event::Changed);
     }
 
@@ -206,23 +237,26 @@ impl Agent {
     }
 
     pub fn update_settings(&self, settings: Settings) -> Result<()> {
-        let reconnect = {
+        let toggled = {
             let mut store = self.store.lock().unwrap();
-            let reconnect = store.settings.gateway_url != settings.gateway_url
-                || store.settings.gateway_token != settings.gateway_token;
+            let toggled = store.settings.enabled != settings.enabled;
             store.settings = settings;
             store.save_settings()?;
-            reconnect
+            toggled
         };
-        if reconnect {
+        if toggled {
             self.reconnect.notify_one();
         }
         self.changed();
         Ok(())
     }
 
-    pub fn automation_enabled(&self) -> bool {
-        self.store.lock().unwrap().settings.automation_enabled
+    pub fn set_enabled(&self, enabled: bool) -> Result<()> {
+        self.update_settings(Settings { enabled })
+    }
+
+    pub fn enabled(&self) -> bool {
+        self.store.lock().unwrap().settings.enabled
     }
 
     pub fn status(&self) -> Status {
@@ -240,186 +274,227 @@ impl Agent {
         Status {
             version: env!("CARGO_PKG_VERSION"),
             id: self.identity.id(),
-            gateway: store.settings.gateway_url.clone(),
+            enabled: store.settings.enabled,
             connected: self.connected.load(Ordering::Relaxed),
-            automation: store.settings.automation_enabled,
             devices,
-            pairing: self.pairing_info(&store.settings.gateway_url),
+            setup: self.setup.lock().unwrap().clone(),
         }
-    }
-
-    fn pairing_info(&self, gateway: &str) -> Option<PairingInfo> {
-        let pairing = self.pairing.lock().unwrap();
-        let p = pairing.as_ref().filter(|p| p.expires > Instant::now())?;
-        let qr = wire::qr_payload(gateway, &p.secret, self.identity.id());
-        Some(PairingInfo {
-            code: wire::display_secret(&p.secret),
-            qr_svg: wire::qr_svg(&qr),
-            qr,
-            expires_in: p.expires.saturating_duration_since(Instant::now()).as_secs(),
-        })
     }
 
     pub fn devices(&self) -> Vec<DeviceStatus> {
         self.status().devices
     }
 
-    // ---------------------------------------------------------------- gateway
-
-    fn out(&self) -> Result<mpsc::Sender<Message>> {
-        self.out.lock().unwrap().clone().ok_or_else(|| anyhow!("Not connected to the Pairspan gateway."))
+    pub(crate) fn device_by_usb(&self, serial: &str) -> Option<Device> {
+        self.store.lock().unwrap().devices.iter().find(|d| d.usb_serial == serial).cloned()
     }
 
-    async fn send_text(&self, msg: ToGateway<'_>) -> Result<()> {
-        self.out()?.send(Message::Text(msg.json().into())).await.map_err(|_| anyhow!("gateway connection closed"))
+    // ---------------------------------------------------------------- signalling
+
+    fn signal(&self) -> Option<Arc<Signal>> {
+        self.signal.lock().unwrap().clone()
     }
 
-    async fn send_relay(&self, peer: PeerId, payload: &[u8]) -> Result<()> {
-        self.out()?
-            .send(Message::Binary(wire::relay_frame(peer, payload).into()))
-            .await
-            .map_err(|_| anyhow!("gateway connection closed"))
+    fn add_link(&self, id: PeerId, public_b64: &str) {
+        let Ok(key) = decode_public(public_b64) else { return };
+        let name = wire::link_name(self.identity.public(), &key);
+        self.links.lock().unwrap().insert(name.clone(), (id, key));
+        if let Some(s) = self.signal() {
+            s.join(&name, "pc");
+        }
     }
 
-    async fn gateway_loop(self: Arc<Self>) {
+    fn remove_link(&self, id: PeerId) {
+        let mut links = self.links.lock().unwrap();
+        let names: Vec<String> = links.iter().filter(|(_, (p, _))| *p == id).map(|(n, _)| n.clone()).collect();
+        for n in names {
+            links.remove(&n);
+            if let Some(s) = self.signal() {
+                s.leave(&n);
+            }
+        }
+    }
+
+    async fn signal_loop(self: Arc<Self>) {
         let mut backoff = 1u64;
         loop {
-            let settings = self.settings();
-            match self.clone().session(&settings).await {
-                Ok(()) => backoff = 1,
-                Err(e) => self.log(format!("Gateway: {e:#}")),
+            if !self.enabled() {
+                self.shutdown_links().await;
+                self.reconnect.notified().await;
+                continue;
             }
-            *self.out.lock().unwrap() = None;
+            match Signal::connect().await {
+                Ok((signal, mut rx)) => {
+                    backoff = 1;
+                    *self.signal.lock().unwrap() = Some(signal.clone());
+                    self.connected.store(true, Ordering::Relaxed);
+                    self.log("Connected to the signalling service");
+                    self.changed();
+                    let names: Vec<String> = self.links.lock().unwrap().keys().cloned().collect();
+                    for n in names {
+                        signal.join(&n, "pc");
+                    }
+                    let room = self.pairing.lock().unwrap().as_ref().map(|p| wire::room_name(&p.room));
+                    if let Some(room) = room {
+                        signal.join(&room, "pc");
+                    }
+                    loop {
+                        tokio::select! {
+                            m = rx.recv() => match m {
+                                Some(m) => self.on_signal(m).await,
+                                None => { self.log("Signalling connection lost"); break }
+                            },
+                            _ = self.reconnect.notified() => break,
+                        }
+                    }
+                }
+                Err(e) => self.log(format!("Signalling: {e:#}")),
+            }
+            // Established phone links are direct and survive a signalling outage.
+            *self.signal.lock().unwrap() = None;
             self.connected.store(false, Ordering::Relaxed);
-            let ids: Vec<PeerId> = self.peers.lock().unwrap().keys().copied().collect();
-            for id in ids {
-                self.peer_down(id).await;
-            }
             self.changed();
-            tokio::select! {
-                _ = tokio::time::sleep(Duration::from_secs(backoff)) => {}
-                _ = self.reconnect.notified() => {}
+            if self.enabled() {
+                tokio::select! {
+                    _ = tokio::time::sleep(Duration::from_secs(backoff)) => {}
+                    _ = self.reconnect.notified() => {}
+                }
+                backoff = (backoff * 2).min(30);
             }
-            backoff = (backoff * 2).min(30);
         }
     }
 
-    async fn session(self: Arc<Self>, settings: &Settings) -> Result<()> {
-        let (ws, _) = tokio::time::timeout(Duration::from_secs(15), tokio_tungstenite::connect_async(&settings.gateway_url))
-            .await
-            .context("connection timed out")?
-            .with_context(|| format!("cannot reach {}", settings.gateway_url))?;
-        let (mut sink, mut stream) = ws.split();
-
-        let nonce = match next_control(&mut stream).await? {
-            FromGateway::Challenge { nonce, .. } => {
-                use base64::Engine;
-                base64::engine::general_purpose::STANDARD.decode(nonce).context("bad challenge")?
-            }
-            other => bail!("expected challenge, got {other:?}"),
-        };
-        let sig = self.identity.sign_challenge(&nonce);
-        let public = self.identity.public_b64();
-        let peers: Vec<PeerId> = self.store.lock().unwrap().devices.iter().map(|d| d.id).collect();
-        let hello = ToGateway::Hello {
-            role: Role::Pc,
-            public: &public,
-            sig: &sig,
-            peers,
-            token: settings.gateway_token.as_deref(),
-        };
-        sink.send(Message::Text(hello.json().into())).await?;
-        let online = match next_control(&mut stream).await? {
-            FromGateway::Welcome { online, .. } => online,
-            FromGateway::Error { msg, .. } => bail!("gateway refused: {msg}"),
-            other => bail!("expected welcome, got {other:?}"),
-        };
-
-        let (tx, mut rx) = mpsc::channel::<Message>(256);
-        *self.out.lock().unwrap() = Some(tx);
-        self.connected.store(true, Ordering::Relaxed);
-        self.log(format!("Connected to {} as {}", settings.gateway_url, self.identity.id().short()));
+    async fn shutdown_links(&self) {
+        let ids: Vec<PeerId> = self.peers.lock().unwrap().keys().copied().collect();
+        for id in ids {
+            self.peer_down(id).await;
+        }
         self.changed();
+    }
 
-        let writer = tokio::spawn(async move {
-            let mut ping = tokio::time::interval(Duration::from_secs(20));
-            ping.tick().await;
-            loop {
-                let msg = tokio::select! {
-                    m = rx.recv() => match m { Some(m) => m, None => break },
-                    _ = ping.tick() => Message::Ping(Default::default()),
-                };
-                if sink.send(msg).await.is_err() {
-                    break;
-                }
-            }
-            let _ = sink.close().await;
-        });
-
-        for id in online {
-            self.peer_up(id).await;
-        }
-        let room = self.pairing.lock().unwrap().as_ref().map(|p| p.room.clone());
-        if let Some(room) = room {
-            let _ = self.send_text(ToGateway::RoomOpen { room: &room }).await;
-        }
-
-        let result = loop {
-            let msg = tokio::select! {
-                m = stream.next() => m,
-                _ = self.reconnect.notified() => break Ok(()),
-            };
-            match msg {
-                Some(Ok(Message::Text(text))) => match serde_json::from_str::<FromGateway>(&text) {
-                    Ok(m) => self.on_control(m).await,
-                    Err(_) => tracing::debug!("ignoring unknown gateway message"),
-                },
-                Some(Ok(Message::Binary(frame))) => {
-                    if let Some((src, payload)) = wire::parse_relay(&frame) {
-                        self.on_frame(src, payload).await;
+    async fn on_signal(&self, msg: Incoming) {
+        match msg {
+            Incoming::Presence { topic, key, online: true } if key == "phone" => {
+                let link = self.links.lock().unwrap().get(&topic).copied();
+                if let Some((id, _)) = link {
+                    let up = self.existing_peer(&id).is_some_and(|p| p.ready.load(Ordering::Relaxed));
+                    if !up {
+                        self.connect_phone(id, topic).await;
                     }
                 }
-                Some(Ok(Message::Close(frame))) => break Err(anyhow!("closed by gateway: {:?}", frame.map(|f| f.reason.to_string()))),
-                Some(Ok(_)) => {}
-                Some(Err(e)) => break Err(e.into()),
-                None => break Err(anyhow!("connection lost")),
+            }
+            Incoming::Broadcast { topic, payload } => match payload["t"].as_str() {
+                Some("want") => {
+                    let link = self.links.lock().unwrap().get(&topic).copied();
+                    if let Some((id, _)) = link {
+                        self.connect_phone(id, topic).await;
+                    }
+                }
+                Some("answer") => {
+                    let link = self.links.lock().unwrap().get(&topic).copied();
+                    let Some((id, _)) = link else { return };
+                    let Some(peer) = self.existing_peer(&id) else { return };
+                    if payload["g"].as_u64() != Some(peer.generation.load(Ordering::Relaxed)) {
+                        return;
+                    }
+                    let pc = peer.pc.lock().unwrap().clone();
+                    if let Some(pc) = pc {
+                        if let Err(e) = crate::rtc::accept_answer(&pc, &payload["sdp"]).await {
+                            self.log(format!("Phone {}: {e:#}", id.short()));
+                        }
+                    }
+                }
+                Some("phone") => self.on_room_phone(&topic, &payload),
+                _ => {}
+            },
+            Incoming::Presence { .. } => {}
+        }
+    }
+
+    /// Opens (or reopens) the direct link to a phone: a fresh offer replaces any older attempt.
+    async fn connect_phone(&self, id: PeerId, topic: String) {
+        let Some(agent) = self.me.upgrade() else { return };
+        let peer = self.peer(id);
+        if peer.ready.load(Ordering::Relaxed) {
+            // The phone asked again, so its side of the old link is gone.
+            self.peer_down(id).await;
+        }
+        let generation = peer.generation.fetch_add(1, Ordering::Relaxed) + 1;
+        let offer = match crate::rtc::offer().await {
+            Ok(o) => o,
+            Err(e) => {
+                self.log(format!("Phone {}: {e:#}", id.short()));
+                return;
             }
         };
-        writer.abort();
-        result
+        if peer.generation.load(Ordering::Relaxed) != generation {
+            let _ = offer.pc.close().await;
+            return;
+        }
+        self.close_rtc(&peer);
+        *peer.pc.lock().unwrap() = Some(offer.pc.clone());
+        if let Some(s) = self.signal() {
+            s.broadcast(&topic, json!({ "t": "offer", "g": generation, "sdp": offer.sdp }));
+        }
+        let (dc, dead) = (offer.dc, offer.dead);
+        tokio::spawn(async move { agent.run_channel(peer, generation, dc, dead).await });
     }
 
-    async fn on_control(&self, msg: FromGateway) {
-        match msg {
-            FromGateway::Presence { id, online: true } => self.peer_up(id).await,
-            FromGateway::Presence { id, online: false } => self.peer_down(id).await,
-            FromGateway::RoomPeer { room, id, public, role } => {
-                let psk = {
-                    let mut pairing = self.pairing.lock().unwrap();
-                    match pairing.as_mut() {
-                        Some(p) if p.room == room && role == Role::Phone => match decode_public(&public) {
-                            // The gateway names the peer; its id must be the hash of the key it hands us.
-                            Ok(key) if PeerId::from_pubkey(&key) == id => {
-                                p.phone = Some((id, key));
-                                Some((crypto::pairing_psk(&p.secret), key))
-                            }
-                            _ => None,
-                        },
-                        _ => None,
-                    }
-                };
-                if let Some((psk, key)) = psk {
-                    self.log(format!("Pairing: phone {} joined, verifying…", id.short()));
-                    if let Err(e) = self.handshake(id, &key, Some(psk)).await {
-                        self.pairing_failed(format!("handshake could not start: {e}"));
-                    }
+    async fn run_channel(self: Arc<Self>, peer: Arc<Peer>, generation: u64, dc: Arc<dyn DataChannel>, dead: Arc<Notify>) {
+        let current = || peer.generation.load(Ordering::Relaxed) == generation;
+        let opened = tokio::time::timeout(OPEN_TIMEOUT, async {
+            loop {
+                match dc.poll().await {
+                    Some(DataChannelEvent::OnOpen) => return true,
+                    Some(DataChannelEvent::OnClose) | None => return false,
+                    _ => {}
                 }
             }
-            FromGateway::RoomOpened { .. } => self.changed(),
-            FromGateway::Error { code, msg } => self.log(format!("Gateway error {code}: {msg}")),
-            FromGateway::Challenge { .. } | FromGateway::Welcome { .. } => {}
+        })
+        .await
+        .unwrap_or(false);
+        if !opened || !current() {
+            if current() {
+                self.log(format!("Phone {}: no direct connection (network blocks peer-to-peer?)", peer.id.short()));
+                self.close_rtc(&peer);
+            }
+            return;
+        }
+        *peer.dc.lock().unwrap() = Some(dc.clone());
+        self.link_up(peer.id).await;
+        loop {
+            tokio::select! {
+                ev = dc.poll() => match ev {
+                    Some(DataChannelEvent::OnMessage(m)) => self.on_frame(peer.id, &m.data).await,
+                    Some(DataChannelEvent::OnClose) | None => break,
+                    _ => {}
+                },
+                _ = dead.notified() => break,
+            }
+            if !current() {
+                return;
+            }
+        }
+        if current() {
+            self.peer_down(peer.id).await;
         }
     }
+
+    fn close_rtc(&self, peer: &Peer) {
+        peer.dc.lock().unwrap().take();
+        if let Some(pc) = peer.pc.lock().unwrap().take() {
+            tokio::spawn(async move {
+                let _ = pc.close().await;
+            });
+        }
+    }
+
+    async fn send_frame(&self, peer: &Peer, frame: &[u8]) -> Result<()> {
+        let dc = peer.dc.lock().unwrap().clone().ok_or_else(|| anyhow!("phone is not connected"))?;
+        dc.send(BytesMut::from(frame)).await.map_err(|e| anyhow!("link closed: {e}"))
+    }
+
+    // ---------------------------------------------------------------- sessions
 
     fn peer(&self, id: PeerId) -> Arc<Peer> {
         self.peers.lock().unwrap().entry(id).or_insert_with(|| Arc::new(Peer::new(id))).clone()
@@ -429,19 +504,30 @@ impl Agent {
         self.peers.lock().unwrap().get(id).cloned()
     }
 
-    async fn peer_up(&self, id: PeerId) {
-        let Some(device) = self.store.lock().unwrap().device(&id).cloned() else { return };
-        let Ok(key) = decode_public(&device.public) else { return };
-        self.peer(id).online.store(true, Ordering::Relaxed);
-        if let Err(e) = self.handshake(id, &key, None).await {
-            self.log(format!("{}: handshake failed to start: {e}", device.name));
+    /// The data channel is open: run the handshake (bound to the pair secret while pairing).
+    async fn link_up(&self, id: PeerId) {
+        let pairing = {
+            let pairing = self.pairing.lock().unwrap();
+            pairing.as_ref().and_then(|p| p.phone.filter(|(pid, _)| *pid == id).map(|(_, key)| (key, crypto::pairing_psk(&p.secret))))
+        };
+        let result = match pairing {
+            Some((key, psk)) => self.handshake(id, &key, Some(psk)).await,
+            None => {
+                let Some(device) = self.store.lock().unwrap().device(&id).cloned() else { return };
+                let Ok(key) = decode_public(&device.public) else { return };
+                self.handshake(id, &key, None).await
+            }
+        };
+        if let Err(e) = result {
+            self.log(format!("Phone {}: handshake failed to start: {e}", id.short()));
         }
     }
 
     async fn peer_down(&self, id: PeerId) {
         let Some(peer) = self.existing_peer(&id) else { return };
+        peer.generation.fetch_add(1, Ordering::Relaxed);
+        self.close_rtc(&peer);
         let was_ready = peer.ready.swap(false, Ordering::Relaxed);
-        peer.online.store(false, Ordering::Relaxed);
         *peer.tx.lock().await = None;
         *peer.rx.lock().unwrap() = None;
         *peer.pending.lock().unwrap() = None;
@@ -467,7 +553,7 @@ impl Agent {
         peer.ready.store(false, Ordering::Relaxed);
         *peer.tx.lock().await = None;
         *peer.pending.lock().unwrap() = Some(init);
-        self.send_relay(id, &frame).await
+        self.send_frame(&peer, &frame).await
     }
 
     async fn on_frame(&self, src: PeerId, payload: &[u8]) {
@@ -484,12 +570,12 @@ impl Agent {
                     Some(Ok(plain)) => self.on_plain(&peer, &plain).await,
                     Some(Err(e)) => {
                         self.log(format!("Dropping frame from {}: {e}; rekeying", src.short()));
-                        self.peer_up(src).await;
+                        self.link_up(src).await;
                     }
                     None => {}
                 }
             }
-            crypto::REKEY => self.peer_up(src).await,
+            crypto::REKEY => self.link_up(src).await,
             _ => {}
         }
     }
@@ -512,7 +598,6 @@ impl Agent {
         *peer.rx.lock().unwrap() = Some(session.rx);
         *peer.tx.lock().await = Some(session.tx);
         peer.ready.store(true, Ordering::Relaxed);
-        peer.online.store(true, Ordering::Relaxed);
 
         let finishing_pairing = {
             let pairing = self.pairing.lock().unwrap();
@@ -525,12 +610,12 @@ impl Agent {
             }
         }
 
-        let hello = serde_json::json!({ "m": "hello", "p": { "name": self.host_name, "os": std::env::consts::OS, "version": env!("CARGO_PKG_VERSION") } });
+        let hello = json!({ "m": "hello", "p": { "name": self.host_name, "os": std::env::consts::OS, "version": env!("CARGO_PKG_VERSION") } });
         let _ = self.send_channel(&peer, CH_RPC, 0, hello.to_string().as_bytes()).await;
 
         let device = self.store.lock().unwrap().device(&src).cloned();
         if let Some(d) = device {
-            self.log(format!("{} is online (encrypted session ready)", d.name));
+            self.log(format!("{} is online (direct, end-to-end encrypted)", d.name));
             if self.manage_adb {
                 let serial = d.serial();
                 tokio::spawn(async move {
@@ -548,7 +633,7 @@ impl Agent {
         let Some((channel, stream, body)) = wire::parse_channel(plain) else { return };
         match channel {
             CH_RPC => {
-                let Ok(msg) = serde_json::from_slice::<serde_json::Value>(body) else { return };
+                let Ok(msg) = serde_json::from_slice::<Value>(body) else { return };
                 match msg["m"].as_str() {
                     Some("hello") => self.on_phone_hello(peer.id, &msg["p"]),
                     Some("unpair") => {
@@ -577,7 +662,7 @@ impl Agent {
         }
     }
 
-    fn on_phone_hello(&self, id: PeerId, p: &serde_json::Value) {
+    fn on_phone_hello(&self, id: PeerId, p: &Value) {
         let mut store = self.store.lock().unwrap();
         let Some(d) = store.devices.iter_mut().find(|d| d.id == id) else { return };
         let text = |k: &str| p[k].as_str().map(|s| s.chars().take(64).collect::<String>());
@@ -597,43 +682,68 @@ impl Agent {
 
     async fn send_channel(&self, peer: &Peer, channel: u8, stream: u32, body: &[u8]) -> Result<()> {
         let plain = wire::channel_frame(channel, stream, body);
-        let out = self.out()?;
         let mut tx = peer.tx.lock().await;
         let sealer = tx.as_mut().ok_or_else(|| anyhow!("phone is not connected"))?;
         let frame = sealer.seal(&plain)?;
-        out.send(Message::Binary(wire::relay_frame(peer.id, &frame).into()))
-            .await
-            .map_err(|_| anyhow!("gateway connection closed"))
+        self.send_frame(peer, &frame).await
     }
 
     // ---------------------------------------------------------------- pairing
 
+    /// Opens a pairing room; `usb.rs` hands the secret to the phone over the cable.
     pub async fn start_pairing(&self) -> Result<PairingInfo> {
-        if !self.connected.load(Ordering::Relaxed) {
-            bail!("Not connected to the Pairspan gateway ({}).", self.settings().gateway_url);
-        }
+        let signal = self.signal().context("Not connected to the signalling service. Check the internet connection.")?;
         let secret = wire::new_pair_secret();
         let room = crypto::room_id(&secret);
         let old = self.pairing.lock().unwrap().replace(Pairing {
-            secret,
+            secret: secret.clone(),
             room: room.clone(),
             expires: Instant::now() + PAIR_TTL,
             phone: None,
         });
         if let Some(old) = old {
-            let _ = self.send_text(ToGateway::RoomClose { room: &old.room }).await;
+            signal.leave(&wire::room_name(&old.room));
         }
-        self.send_text(ToGateway::RoomOpen { room: &room }).await?;
-        self.log("Pairing: waiting for a phone to scan the code");
+        signal.join(&wire::room_name(&room), "pc");
         self.changed();
-        self.pairing_info(&self.settings().gateway_url).context("pairing expired")
+        Ok(PairingInfo { code: secret, expires_in: PAIR_TTL.as_secs() })
     }
 
     pub async fn cancel_pairing(&self) {
         let old = self.pairing.lock().unwrap().take();
         if let Some(old) = old {
-            let _ = self.send_text(ToGateway::RoomClose { room: &old.room }).await;
+            if let Some(s) = self.signal() {
+                s.leave(&wire::room_name(&old.room));
+            }
+            if let Some((id, _)) = old.phone {
+                if self.store.lock().unwrap().device(&id).is_none() {
+                    self.remove_link(id);
+                }
+            }
             self.changed();
+        }
+    }
+
+    /// A phone in the pairing room introduced itself: answer with our key and start linking.
+    fn on_room_phone(&self, topic: &str, payload: &Value) {
+        let Some(public) = payload["pub"].as_str() else { return };
+        let Ok(key) = decode_public(public) else { return };
+        let id = PeerId::from_pubkey(&key);
+        {
+            let mut pairing = self.pairing.lock().unwrap();
+            let Some(p) = pairing.as_mut().filter(|p| wire::room_name(&p.room) == topic && p.expires > Instant::now()) else { return };
+            if p.phone.is_some_and(|(pid, _)| pid != id) {
+                return;
+            }
+            p.phone = Some((id, key));
+        }
+        if let Some(s) = self.signal() {
+            s.broadcast(topic, json!({ "t": "pc", "pub": self.identity.public_b64() }));
+        }
+        let name = wire::link_name(self.identity.public(), &key);
+        if !self.links.lock().unwrap().contains_key(&name) {
+            self.log(format!("Pairing: phone {} answered, connecting…", id.short()));
+            self.add_link(id, public);
         }
     }
 
@@ -657,25 +767,28 @@ impl Agent {
                 android: String::new(),
                 adb_port: store.next_adb_port(),
                 paired_at: now_string(),
+                usb_serial: String::new(),
             };
             store.devices.push(device.clone());
             store.save_devices()?;
             device
         };
         let room = self.pairing.lock().unwrap().take().map(|p| p.room);
-        if let Some(room) = room {
-            let _ = self.send_text(ToGateway::RoomClose { room: &room }).await;
+        if let (Some(room), Some(s)) = (room, self.signal()) {
+            s.leave(&wire::room_name(&room));
         }
-        self.sync_peers().await?;
         self.spawn_listener(&device);
         self.log(format!("Paired with phone {}", id.short()));
-        let _ = self.events.send(Event::Paired { device });
+        let _ = self.events.send(Event::Paired { device: device.clone() });
         Ok(())
     }
 
-    async fn sync_peers(&self) -> Result<()> {
-        let ids: Vec<PeerId> = self.store.lock().unwrap().devices.iter().map(|d| d.id).collect();
-        self.send_text(ToGateway::Peers { ids }).await
+    pub(crate) fn set_usb_serial(&self, id: PeerId, serial: &str) {
+        let mut store = self.store.lock().unwrap();
+        if let Some(d) = store.devices.iter_mut().find(|d| d.id == id) {
+            d.usb_serial = serial.to_string();
+            let _ = store.save_devices();
+        }
     }
 
     /// Waits for the next completed pairing (or failure) for up to `timeout`.
@@ -695,7 +808,7 @@ impl Agent {
         tokio::time::timeout(timeout, wait).await.context("timed out waiting for the phone")?
     }
 
-    /// Unpairs a phone. The gateway cuts the link at once; the phone is told first when it is online.
+    /// Unpairs a phone; it is told first when it is online.
     pub async fn remove_device(&self, id: PeerId, notify_phone: bool) -> Result<Device> {
         if notify_phone {
             if let Some(peer) = self.existing_peer(&id) {
@@ -711,7 +824,7 @@ impl Agent {
             store.save_devices()?;
             d
         };
-        let _ = self.sync_peers().await;
+        self.remove_link(id);
         self.peer_down(id).await;
         self.peers.lock().unwrap().remove(&id);
         if let Some(h) = self.listeners.lock().unwrap().remove(&id) {
@@ -790,25 +903,5 @@ impl Agent {
             let _ = self.send_channel(&peer, CH_CLOSE, sid, b"").await;
         }
         let _ = writer.await;
-    }
-}
-
-async fn next_control<S>(stream: &mut S) -> Result<FromGateway>
-where
-    S: futures_util::Stream<Item = Result<Message, tokio_tungstenite::tungstenite::Error>> + Unpin,
-{
-    let deadline = tokio::time::sleep(Duration::from_secs(15));
-    tokio::pin!(deadline);
-    loop {
-        tokio::select! {
-            _ = &mut deadline => bail!("gateway did not answer"),
-            msg = stream.next() => match msg {
-                Some(Ok(Message::Text(text))) => return serde_json::from_str(&text).context("unexpected gateway message"),
-                Some(Ok(Message::Close(frame))) => bail!("closed by gateway: {}", frame.map(|f| f.reason.to_string()).unwrap_or_default()),
-                Some(Ok(_)) => continue,
-                Some(Err(e)) => return Err(e.into()),
-                None => bail!("connection closed"),
-            }
-        }
     }
 }

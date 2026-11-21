@@ -1,7 +1,7 @@
 [package]
 name = "pairspan-core"
 version = "1.0.0"
-description = "Pairspan PC agent: identity, end-to-end encryption, gateway client, ADB bridge and local RPC"
+description = "Pairspan PC agent: identity, end-to-end encryption, Supabase signalling, WebRTC link, ADB bridge and local RPC"
 authors = ["Ferhat Özçelik"]
 license = "MIT"
 edition = "2021"
@@ -21,13 +21,11 @@ rustls = { version = "0.23", default-features = false, features = ["ring", "std"
 futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
 bytes = "1"
 dirs = "5"
-qrcode = { version = "0.14", default-features = false, features = ["svg"] }
 anyhow = "1"
 tracing = "0.1"
-url = "2"
+webrtc = "0.21"
+async-trait = "0.1.92"
 
 [dev-dependencies]
-pairspan-gateway = { path = "../gateway" }
-axum = "0.8"
 tempfile = "3"
 hex = "0.4"

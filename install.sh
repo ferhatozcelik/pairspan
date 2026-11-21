@@ -1,7 +1,7 @@
 #!/bin/sh
-# Pairspan installer — https://pairspan.ferhatozcelik.com/docs/#install
+# Pairspan installer — https://github.com/ferhatozcelik/pairspan#install
 #
-#   curl -fsSL https://pairspan.ferhatozcelik.com/install.sh | sh     # latest release
+#   curl -fsSL https://ferhatozcelik.github.io/pairspan/install.sh | sh     # latest release
 #   ./install.sh                 # inside a checkout: builds from source (same as --source)
 #   ./install.sh --source        # build from this checkout (needs Rust + Node)
 #   ./install.sh --release       # download the latest release even inside a checkout

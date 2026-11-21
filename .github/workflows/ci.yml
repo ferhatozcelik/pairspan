@@ -12,7 +12,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       # The desktop app needs WebKitGTK on Linux; it is built in release.yml on macOS.
-      - run: cargo test -p pairspan-gateway -p pairspan-core -p pairspan-cli
+      - run: cargo test -p pairspan-core -p pairspan-cli
 
   android:
     runs-on: ubuntu-latest

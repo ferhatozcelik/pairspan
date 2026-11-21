@@ -1,20 +1,19 @@
 import type { Metadata, Viewport } from 'next';
+import { BASE, SITE } from './site';
 import './globals.css';
 
-const site = 'https://pairspan.ferhatozcelik.com';
-
 export const metadata: Metadata = {
-  metadataBase: new URL(site),
+  metadataBase: new URL(`${SITE}/`),
   title: 'Pairspan — your Android phone, one line away',
   description:
-    'Pair an Android phone with your computer once, then drive it from the terminal, scripts or AI agents over MCP. adb over Wi-Fi or mobile data, end-to-end encrypted. Free and open source.',
-  icons: { icon: [{ url: '/icon.svg', type: 'image/svg+xml' }, { url: '/icon.png' }], apple: '/apple-touch-icon.png' },
+    'Connect an Android phone to your Mac once over USB, then use adb, scripts and AI agents on it from anywhere. Direct, end-to-end encrypted, free and open source.',
+  icons: { icon: [{ url: `${BASE}/icon.svg`, type: 'image/svg+xml' }, { url: `${BASE}/icon.png` }], apple: `${BASE}/apple-touch-icon.png` },
   openGraph: {
     type: 'website',
-    url: site,
+    url: `${SITE}/`,
     title: 'Pairspan — your Android phone, one line away',
-    description: 'adb, CLI and MCP for real Android phones. Pair once with a QR code; end-to-end encrypted.',
-    images: [{ url: '/og-image.png', width: 1200, height: 630 }],
+    description: 'adb, CLI and MCP for real Android phones. Connect USB once; direct and end-to-end encrypted.',
+    images: [{ url: `${BASE}/og-image.png`, width: 1200, height: 630 }],
   },
   twitter: { card: 'summary_large_image' },
 };

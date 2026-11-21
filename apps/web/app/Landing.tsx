@@ -1,99 +1,94 @@
-import Link from 'next/link';
+import CopyCommand from './CopyCommand';
+import { BASE, GITHUB, INSTALL, RELEASES } from './site';
 
 type Lang = 'en' | 'tr';
 
-const GITHUB = 'https://github.com/ferhatozcelik/pairspan';
-const RELEASES = `${GITHUB}/releases/latest`;
-const INSTALL = 'curl -fsSL https://pairspan.ferhatozcelik.com/install.sh | sh';
-
 const copy = {
   en: {
-    nav: { how: 'How it works', agents: 'CLI & MCP', security: 'Security', docs: 'Docs' },
+    nav: { how: 'How it works', agents: 'CLI & MCP', security: 'Security' },
     sticker: 'Free · Open source · MIT',
     h1a: 'Your Android phone,',
     h1b: 'one line',
     h1c: 'away.',
-    lead: 'Pair once with a QR code. Then drive the phone from your terminal, scripts or AI agents — over Wi-Fi or mobile data, end-to-end encrypted.',
+    lead: 'Plug the phone in once. Then drive it from your terminal, scripts or AI agents — over Wi-Fi or mobile data, end-to-end encrypted.',
     download: 'Download for macOS',
+    android: 'Android app (APK)',
     navDownload: 'Download',
-    github: 'View on GitHub',
-    orInstall: 'or install from the terminal:',
-    strip: ['adb over any network', 'end-to-end encrypted', 'pairspan CLI', 'MCP for AI agents', 'macOS · Linux · Android', 'self-host in one container'],
+    installLabel: 'Install on your Mac',
+    copy: 'Copy',
+    copied: 'Copied',
+    strip: ['adb over any network', 'end-to-end encrypted', 'pairspan CLI', 'MCP for AI agents', 'macOS · Android', 'no account, no server to run'],
     howKicker: 'How it works',
     howTitle: 'Three steps. Then forget the cable.',
     steps: [
-      ['01', 'Install Pairspan', 'The Mac app lives in the menu bar and brings the pairspan command with it. Install the Android app from the same release.'],
-      ['02', 'Pair with a QR code', 'Click Pair a phone, scan the code with the phone. Connect USB once so wireless ADB is ready.'],
-      ['03', 'Use it from anywhere', 'adb, Android Studio, scripts and AI agents reach the phone through an encrypted tunnel — same Wi-Fi or not.'],
+      ['01', 'Install Pairspan', 'Paste the command above in Terminal. The Mac app lives in the menu bar and brings the pairspan command with it.'],
+      ['02', 'Plug the phone in once', 'Connect it over USB. Pairspan installs the Android app, pairs both sides and turns on wireless ADB — no codes to scan.'],
+      ['03', 'Use it from anywhere', 'Unplug. adb, Android Studio, scripts and AI agents reach the phone directly and encrypted — same Wi-Fi or not.'],
     ],
     agentsKicker: 'CLI & MCP',
     agentsTitle: 'Made for scripts and AI agents.',
-    agentsSub: 'The pairspan command and its MCP server talk only to the app on your Mac, so keys and pairings never leave it.',
-    cliTitle: 'pairspan CLI',
-    cliBody: 'Tap, type, swipe, read the screen, install apps — or pass anything straight to adb.',
-    mcpTitle: 'MCP for Claude, Cursor and VS Code',
-    mcpBody: 'Agents see the UI as a list of elements and act on it. Add --read-only to only let them look.',
-    adbTitle: 'Plain adb still works',
-    adbBody: 'Every paired phone shows up as an adb device, so Android Studio and your existing tools just see it.',
+    agents: [
+      ['CLI', 'pairspan CLI', 'Tap, type, swipe, read the screen, install apps — or pass anything straight to adb.'],
+      ['MCP', 'MCP for Claude, Cursor and VS Code', 'Agents see the UI as a list of elements and act on it, or only look with read-only mode.'],
+      ['adb', 'Plain adb still works', 'Every paired phone shows up as an adb device, so Android Studio and your tools just see it.'],
+    ],
     secKicker: 'Security',
-    secTitle: 'The gateway only ever sees noise.',
+    secTitle: 'Nobody in between can read it.',
     sec: [
-      ['End-to-end encrypted', 'P-256 key agreement and AES-256-GCM between your Mac and your phone. The relay forwards ciphertext.'],
-      ['Keys stay on your devices', 'Each device has its own key. The pairing code never reaches the server; it only sees a hash.'],
-      ['Unpair means unpaired', 'Remove a device on either side and the link is cut instantly — no lingering sessions.'],
-      ['Run your own gateway', 'One 5 MB container. Point the apps at it and nothing else is involved.'],
+      ['Direct and end-to-end encrypted', 'Phone and Mac talk peer to peer. P-256 key agreement and AES-256-GCM on top, so only the two devices hold the keys.'],
+      ['Keys stay on your devices', 'Pairing happens over the USB cable. Nothing to scan, nothing to type, no account.'],
+      ['One switch', 'Turn Pairspan off on either side and the link is down until you turn it back on.'],
     ],
     faqTitle: 'Questions',
     faq: [
-      ['Do I need the phone and computer on the same Wi-Fi?', 'No. Both connect out to the gateway, so it works across networks and over mobile data.'],
-      ['Why connect USB once?', 'Android only lets apps reach adb after it has been enabled on port 5555 from a computer. The desktop app does it in one click. After a phone reboot, do it again.'],
-      ['Does it cost anything?', 'No. Pairspan is MIT-licensed. The public gateway is free; you can also host your own.'],
-      ['Which platforms?', 'macOS today, Linux CLI and app builds, and Android 8 or later on the phone.'],
+      ['Do I need the phone and computer on the same Wi-Fi?', 'No. The devices find each other through a lightweight signalling service and then connect directly, across networks and over mobile data. A few very strict networks block direct connections.'],
+      ['Why connect USB once?', 'Android only lets apps reach adb after it has been enabled from a computer, and the cable is also how the two devices pair safely. After a phone reboot, plug in again.'],
+      ['Does it cost anything?', 'No. Pairspan is MIT-licensed and free. Everything — code, docs and releases — is on GitHub.'],
+      ['Which platforms?', 'macOS on the computer, Android 8 or later on the phone.'],
     ],
     footer: 'Made by Ferhat Özçelik',
   },
   tr: {
-    nav: { how: 'Nasıl çalışır', agents: 'CLI & MCP', security: 'Güvenlik', docs: 'Dokümanlar' },
+    nav: { how: 'Nasıl çalışır', agents: 'CLI & MCP', security: 'Güvenlik' },
     sticker: 'Ücretsiz · Açık kaynak · MIT',
     h1a: 'Android telefonun,',
     h1b: 'bir satır',
     h1c: 'uzağında.',
-    lead: 'Bir kez QR kodla eşleştir. Sonra telefonu terminalden, scriptlerden ya da yapay zekâ ajanlarından yönet — Wi-Fi veya mobil veri üzerinden, uçtan uca şifreli.',
+    lead: 'Telefonu bir kez USB ile tak. Sonra onu terminalden, scriptlerden ya da yapay zekâ ajanlarından yönet — Wi-Fi veya mobil veri üzerinden, uçtan uca şifreli.',
     download: 'macOS için indir',
+    android: 'Android uygulaması (APK)',
     navDownload: 'İndir',
-    github: "GitHub'da gör",
-    orInstall: 'ya da terminalden kur:',
-    strip: ['her ağda adb', 'uçtan uca şifreli', 'pairspan CLI', 'yapay zekâ ajanları için MCP', 'macOS · Linux · Android', 'tek container ile kendi sunucun'],
+    installLabel: "Mac'ine kur",
+    copy: 'Kopyala',
+    copied: 'Kopyalandı',
+    strip: ['her ağda adb', 'uçtan uca şifreli', 'pairspan CLI', 'yapay zekâ ajanları için MCP', 'macOS · Android', 'hesap yok, sunucu yok'],
     howKicker: 'Nasıl çalışır',
     howTitle: 'Üç adım. Sonra kabloyu unut.',
     steps: [
-      ['01', "Pairspan'i kur", "Mac uygulaması menü çubuğunda çalışır ve pairspan komutunu da getirir. Android uygulamasını aynı sürümden kur."],
-      ['02', 'QR kodla eşleştir', "Pair a phone'a tıkla, kodu telefonla tara. Kablosuz ADB için telefonu bir kez USB ile bağla."],
-      ['03', 'Her yerden kullan', "adb, Android Studio, scriptler ve yapay zekâ ajanları telefona şifreli tünel üzerinden ulaşır — aynı Wi-Fi'da olsun ya da olmasın."],
+      ['01', "Pairspan'i kur", "Yukarıdaki komutu Terminal'e yapıştır. Mac uygulaması menü çubuğunda çalışır ve pairspan komutunu da getirir."],
+      ['02', 'Telefonu bir kez tak', 'USB ile bağla. Pairspan Android uygulamasını kurar, iki tarafı eşleştirir ve kablosuz ADB’yi açar — taranacak kod yok.'],
+      ['03', 'Her yerden kullan', "Kabloyu çıkar. adb, Android Studio, scriptler ve yapay zekâ ajanları telefona doğrudan ve şifreli ulaşır — aynı Wi-Fi'da olsun ya da olmasın."],
     ],
     agentsKicker: 'CLI & MCP',
     agentsTitle: 'Scriptler ve yapay zekâ ajanları için.',
-    agentsSub: "pairspan komutu ve MCP sunucusu yalnızca Mac'teki uygulamayla konuşur; anahtarlar ve eşleştirmeler oradan hiç çıkmaz.",
-    cliTitle: 'pairspan CLI',
-    cliBody: "Dokun, yaz, kaydır, ekranı oku, uygulama kur — ya da her şeyi doğrudan adb'ye ilet.",
-    mcpTitle: 'Claude, Cursor ve VS Code için MCP',
-    mcpBody: 'Ajanlar arayüzü bir öğe listesi olarak görür ve onun üzerinden işlem yapar. Yalnızca bakmalarına izin vermek için --read-only ekle.',
-    adbTitle: 'Düz adb de çalışır',
-    adbBody: "Eşleşen her telefon bir adb cihazı olarak görünür; Android Studio ve mevcut araçların onu doğrudan görür.",
+    agents: [
+      ['CLI', 'pairspan CLI', "Dokun, yaz, kaydır, ekranı oku, uygulama kur — ya da her şeyi doğrudan adb'ye ilet."],
+      ['MCP', 'Claude, Cursor ve VS Code için MCP', 'Ajanlar arayüzü bir öğe listesi olarak görür ve onun üzerinden işlem yapar; istersen yalnızca bakarlar.'],
+      ['adb', 'Düz adb de çalışır', 'Eşleşen her telefon bir adb cihazı olarak görünür; Android Studio ve araçların onu doğrudan görür.'],
+    ],
     secKicker: 'Güvenlik',
-    secTitle: 'Gateway yalnızca anlamsız veri görür.',
+    secTitle: 'Aradaki kimse okuyamaz.',
     sec: [
-      ['Uçtan uca şifreli', "Mac ile telefon arasında P-256 anahtar anlaşması ve AES-256-GCM. Relay yalnızca şifreli veriyi iletir."],
-      ['Anahtarlar cihazlarında kalır', 'Her cihazın kendi anahtarı var. Eşleştirme kodu sunucuya hiç gitmez; sunucu yalnızca hash görür.'],
-      ['Kaldırınca gerçekten kopar', 'İki taraftan birinde cihazı kaldır, bağlantı anında kesilir.'],
-      ['Kendi gateway’ini çalıştır', "Tek bir 5 MB'lık container. Uygulamaları ona yönlendir, başka hiçbir şey araya girmez."],
+      ['Doğrudan ve uçtan uca şifreli', 'Telefon ile Mac doğrudan konuşur. Üstünde P-256 anahtar anlaşması ve AES-256-GCM; anahtarlar yalnızca iki cihazda.'],
+      ['Anahtarlar cihazlarında kalır', 'Eşleştirme USB kablosu üzerinden olur. Taranacak, yazılacak bir şey yok; hesap yok.'],
+      ['Tek anahtar', 'Pairspan’i iki taraftan birinde kapat, sen tekrar açana kadar bağlantı kapalı kalır.'],
     ],
     faqTitle: 'Sorular',
     faq: [
-      ["Telefon ve bilgisayar aynı Wi-Fi'da mı olmalı?", 'Hayır. İkisi de gateway’e bağlanır; farklı ağlarda ve mobil veride çalışır.'],
-      ['Neden bir kez USB?', "Android, adb'nin 5555 portunda bir bilgisayardan açılmasını şart koşar. Masaüstü uygulaması bunu tek tıkla yapar. Telefon yeniden başlayınca tekrarla."],
-      ['Ücretli mi?', 'Hayır. Pairspan MIT lisanslıdır. Genel gateway ücretsiz; istersen kendin de barındırabilirsin.'],
-      ['Hangi platformlar?', "Bugün macOS, Linux için CLI ve uygulama, telefonda Android 8 ve üstü."],
+      ["Telefon ve bilgisayar aynı Wi-Fi'da mı olmalı?", 'Hayır. Cihazlar hafif bir sinyal servisi üzerinden birbirini bulur, sonra doğrudan bağlanır; farklı ağlarda ve mobil veride çalışır. Çok kısıtlı bazı ağlar doğrudan bağlantıyı engelleyebilir.'],
+      ['Neden bir kez USB?', "Android, adb'nin bir bilgisayardan açılmasını şart koşar; kablo aynı zamanda iki cihazın güvenle eşleşmesini sağlar. Telefon yeniden başlayınca tekrar tak."],
+      ['Ücretli mi?', "Hayır. Pairspan MIT lisanslı ve ücretsiz. Kod, dokümanlar ve sürümler GitHub'da."],
+      ['Hangi platformlar?', 'Bilgisayarda macOS, telefonda Android 8 ve üstü.'],
     ],
     footer: 'Ferhat Özçelik tarafından',
   },
@@ -101,23 +96,22 @@ const copy = {
 
 export default function Landing({ lang }: { lang: Lang }) {
   const t = copy[lang];
-  const base = lang === 'tr' ? '/tr/' : '/';
   return (
     <>
       <header className="nav">
         <div className="wrap">
-          <Link className="brand" href={base}>
-            <img src="/icon.svg" alt="" width={36} height={36} />
+          <a className="brand" href={lang === 'tr' ? `${BASE}/tr/` : `${BASE}/`}>
+            <img src={`${BASE}/icon.svg`} alt="" width={36} height={36} />
             <span>Pairspan</span>
-          </Link>
+          </a>
           <nav className="nav-links">
             <a className="hide-sm" href="#how">{t.nav.how}</a>
             <a className="hide-sm" href="#agents">{t.nav.agents}</a>
             <a className="hide-sm" href="#security">{t.nav.security}</a>
-            <Link href="/docs/">{t.nav.docs}</Link>
+            <a href={GITHUB}>GitHub</a>
             <span className="lang">
-              <a href="/" className={lang === 'en' ? 'on' : ''}>EN</a>
-              <a href="/tr/" className={lang === 'tr' ? 'on' : ''}>TR</a>
+              <a href={`${BASE}/`} className={lang === 'en' ? 'on' : ''}>EN</a>
+              <a href={`${BASE}/tr/`} className={lang === 'tr' ? 'on' : ''}>TR</a>
             </span>
             <a className="btn sm dark hide-sm" href={RELEASES}>{t.navDownload}</a>
           </nav>
@@ -134,23 +128,12 @@ export default function Landing({ lang }: { lang: Lang }) {
             <p className="lead">{t.lead}</p>
             <div className="cta">
               <a className="btn" href={RELEASES}>{t.download}</a>
-              <a className="btn ghost" href={GITHUB}>{t.github}</a>
+              <a className="btn ghost" href={RELEASES}>{t.android}</a>
             </div>
-            <p className="install-line">{t.orInstall} <code>{INSTALL}</code></p>
           </div>
-          <div className="term" aria-label="Terminal example">
-            <div className="dots"><b /><b /><b /></div>
-            <pre>
-              <span className="p">$</span> pairspan devices{'\n'}
-              <span className="ok">●</span> Pixel 8      2f91c0aa  127.0.0.1:47100{'\n'}
-              <span className="p">$</span> pairspan launch com.android.settings{'\n'}
-              <span className="p">$</span> pairspan click &quot;Network &amp; internet&quot;{'\n'}
-              <span className="c">Tapped &apos;Network &amp; internet&apos; at 540,812</span>{'\n'}
-              <span className="p">$</span> adb -s 127.0.0.1:47100 logcat -d | tail -1{'\n'}
-              <span className="c">I ActivityManager: Displayed …/.SubSettings</span>{'\n'}
-              <span className="p">$</span> claude mcp add pairspan -- pairspan mcp{'\n'}
-              <span className="ok">✓ Added MCP server pairspan</span>
-            </pre>
+          <div>
+            <div className="kicker">{t.installLabel}</div>
+            <CopyCommand command={INSTALL} label={t.copy} done={t.copied} />
           </div>
         </div>
 
@@ -171,7 +154,6 @@ export default function Landing({ lang }: { lang: Lang }) {
                 <span className="pill">{n}</span>
                 <h3>{title}</h3>
                 <p>{body}</p>
-                {i === 0 && <div className="code">{INSTALL}</div>}
               </div>
             ))}
           </div>
@@ -180,36 +162,14 @@ export default function Landing({ lang }: { lang: Lang }) {
         <section id="agents" className="wrap">
           <div className="kicker">{t.agentsKicker}</div>
           <h2>{t.agentsTitle}</h2>
-          <p className="sub">{t.agentsSub}</p>
           <div className="bento">
-            <div className="card dark wide">
-              <span className="pill">CLI</span>
-              <h3>{t.cliTitle}</h3>
-              <p>{t.cliBody}</p>
-              <div className="code">{`pairspan elements "Log in"
-pairspan click "Log in"
-pairspan text "hello@example.com"
-pairspan screenshot shot.png
-pairspan adb -- install -r app-debug.apk`}</div>
-            </div>
-            <div className="card ember">
-              <span className="pill">MCP</span>
-              <h3>{t.mcpTitle}</h3>
-              <p>{t.mcpBody}</p>
-              <div className="code">claude mcp add pairspan -- pairspan mcp</div>
-            </div>
-            <div className="card wide">
-              <span className="pill">adb</span>
-              <h3>{t.adbTitle}</h3>
-              <p>{t.adbBody}</p>
-              <div className="code">{`$ adb devices
-127.0.0.1:47100   device`}</div>
-            </div>
-            <div className="card">
-              <span className="pill">E2E</span>
-              <h3>P-256 · AES-256-GCM</h3>
-              <p>{t.sec[0][1]}</p>
-            </div>
+            {t.agents.map(([pill, title, body], i) => (
+              <div key={pill} className={`card${i === 0 ? ' dark' : i === 1 ? ' ember' : ''}`}>
+                <span className="pill">{pill}</span>
+                <h3>{title}</h3>
+                <p>{body}</p>
+              </div>
+            ))}
           </div>
         </section>
 
@@ -218,10 +178,9 @@ pairspan adb -- install -r app-debug.apk`}</div>
           <h2>{t.secTitle}</h2>
           <div className="bento">
             {t.sec.map(([title, body], i) => (
-              <div key={title} className={`card${i === 0 ? ' dark wide' : i === 3 ? ' wide' : ''}`}>
+              <div key={title} className={`card${i === 0 ? ' dark' : ''}`}>
                 <h3>{title}</h3>
                 <p>{body}</p>
-                {i === 3 && <div className="code">docker compose up -d</div>}
               </div>
             ))}
           </div>
@@ -242,7 +201,7 @@ pairspan adb -- install -r app-debug.apk`}</div>
         <div className="wrap">
           <span>© 2026 Pairspan · MIT · {t.footer}</span>
           <a href={GITHUB}>GitHub</a>
-          <Link href="/docs/">Docs</Link>
+          <a href={RELEASES}>Releases</a>
         </div>
       </footer>
     </>

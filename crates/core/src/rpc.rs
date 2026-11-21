@@ -35,12 +35,6 @@ pub struct Response {
     pub error: Option<RpcError>,
 }
 
-/// Methods that act on a phone; refused while automation is switched off in the app.
-const AUTOMATION: &[&str] = &[
-    "adb", "shell", "tap", "swipe", "text", "key", "screenshot", "dump", "elements", "tap_element", "launch", "stop",
-    "install", "apps", "logcat", "current", "screen_size",
-];
-
 #[cfg(unix)]
 pub async fn serve(agent: Arc<Agent>, socket: &Path) -> Result<()> {
     use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
@@ -144,22 +138,14 @@ pub fn resolve_device(agent: &Agent, selector: Option<&str>) -> Result<(PeerId, 
 }
 
 pub async fn dispatch(agent: &Agent, method: &str, p: &Value) -> Result<Value> {
-    if AUTOMATION.contains(&method) && !agent.automation_enabled() {
-        bail!("Automation is turned off in the Pairspan app (Settings → Allow CLI and MCP).");
-    }
     let serial = || -> Result<String> { Ok(resolve_device(agent, p["device"].as_str())?.1) };
     Ok(match method {
         "status" => serde_json::to_value(agent.status())?,
         "devices" => serde_json::to_value(agent.devices())?,
         "logs" => json!(agent.logs()),
-        "pair.start" => serde_json::to_value(agent.start_pairing().await?)?,
         "pair.wait" => {
             let secs = p["timeout"].as_u64().unwrap_or(300);
             serde_json::to_value(agent.wait_paired(Duration::from_secs(secs)).await?)?
-        }
-        "pair.cancel" => {
-            agent.cancel_pairing().await;
-            json!(true)
         }
         "unpair" => {
             let (id, _) = resolve_device_any(agent, str_param(p, "device")?)?;

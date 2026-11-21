@@ -29,7 +29,7 @@
 html,body{margin:0;height:100%}
 body{background:var(--bg);background-image:radial-gradient(var(--dots) 1px,transparent 0);background-size:28px 28px;color:var(--text);font:13.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;
   user-select:none;-webkit-user-select:none;cursor:default;display:flex;overflow:hidden}
-.drag{position:fixed;inset:0 0 auto 0;height:52px;z-index:1}
+.drag{position:fixed;top:0;left:0;width:216px;height:52px;z-index:3}
 
 /* Sidebar */
 aside{width:216px;flex:none;display:flex;flex-direction:column;padding:52px 10px 12px;position:relative;z-index:2}
@@ -95,8 +95,6 @@ input{width:100%}
 .switch::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.3);transition:transform .2s}
 .switch.on{background:var(--accent)}.switch.on::after{transform:translateX(16px)}
 
-.code{display:flex;align-items:center;gap:8px;background:var(--well);border:1px solid var(--line);border-radius:12px;padding:7px 8px 7px 11px}
-.code span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .stack{display:flex;flex-direction:column;gap:8px;padding:12px 14px}
 
 .empty{text-align:center;padding:42px 20px}
@@ -120,7 +118,6 @@ input{width:100%}
 .keys button{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;font-size:11.5px}
 .keys svg{width:18px;height:18px}
 .out{font-family:var(--mono);font-size:11px;white-space:pre-wrap;max-height:180px;overflow:auto;color:var(--sub);margin:0;user-select:text;-webkit-user-select:text}
-.log{font-family:var(--mono);font-size:11px;white-space:pre-wrap;max-height:260px;overflow:auto;color:var(--sub);user-select:text;-webkit-user-select:text;padding:10px 14px;margin:0}
 
 /* Mode switch (segmented, pill like the website) */
 .seg{display:inline-flex;padding:3px;border-radius:999px;background:var(--card);border:1px solid var(--line);gap:2px}
@@ -147,37 +144,40 @@ input{width:100%}
 .tile-keys button{flex:1;display:inline-flex;justify-content:center;padding:4px 0}
 .tile-keys button svg{width:15px;height:15px}
 
-/* Status card (sidebar) */
-.status-card{all:unset;display:block;cursor:pointer;margin:0 2px;padding:13px 14px 12px;border-radius:18px;background:var(--ink);color:var(--off-white);position:relative;overflow:hidden;transition:transform .15s}
-.status-card:hover{transform:translateY(-1px)}
+/* Status card (sidebar): the on/off switch */
+.status-card{margin:0 2px;padding:14px;border-radius:18px;background:var(--ink);color:var(--off-white);position:relative;overflow:hidden}
 @media (prefers-color-scheme:dark){.status-card{background:#1c1b19;border:1px solid #2c2a27}}
 .status-card::before{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 0);background-size:14px 14px;pointer-events:none}
 .sc-top{display:flex;align-items:center;gap:8px;position:relative}
-.sc-label{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--stone)}
-.sc-pill{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;padding:2px 9px 2px 7px;border-radius:999px;background:rgba(51,199,145,.16);color:#73e2b6}
-.sc-pill.off{background:rgba(250,84,36,.18);color:#fc997b}
+.sc-top b{font-size:15px;font-weight:800;letter-spacing:-.03em}
+.sc-top .switch{margin-left:auto;cursor:pointer;background:#44403c}
+.sc-top .switch.on{background:var(--ember)}
+.sc-pill{position:relative;margin-top:10px;display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;padding:2px 9px 2px 7px;border-radius:999px;background:rgba(51,199,145,.16);color:#73e2b6}
+.sc-pill.off{background:rgba(255,255,255,.08);color:var(--stone)}
+.sc-pill.wait{background:rgba(250,84,36,.18);color:#fc997b}
 .sc-pill i{width:7px;height:7px;border-radius:50%;background:currentColor;position:relative}
-.sc-pill:not(.off) i::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid currentColor;opacity:0;animation:pulse 1.8s ease-out infinite}
+.sc-pill:not(.off):not(.wait) i::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid currentColor;opacity:0;animation:pulse 1.8s ease-out infinite}
 @keyframes pulse{from{transform:scale(.4);opacity:.8}to{transform:scale(1.4);opacity:0}}
-.sc-host{position:relative;margin:9px 0 10px;font-family:var(--mono);font-size:11.5px;color:var(--off-white);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.sc-stats{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
-.sc-stats div{display:flex;flex-direction:column;gap:1px;min-width:0}
-.sc-stats b{font-size:15px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums;white-space:nowrap}
-.sc-stats span{font-size:10px;color:var(--stone)}
-.sc-spark{position:relative;display:flex;align-items:flex-end;gap:2px;height:20px;margin-top:10px}
-.sc-spark i{flex:1;border-radius:2px;background:rgba(255,254,247,.18);min-height:2px}
-.sc-spark i.last{background:var(--ember)}
-.sc-foot{position:relative;margin-top:8px;font-size:10.5px;color:var(--stone);display:flex;justify-content:space-between}
+.sc-foot{position:relative;margin-top:10px;font-size:10.5px;color:var(--stone);display:flex;justify-content:space-between}
 
-/* Pair sheet */
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.28);display:none;align-items:flex-start;justify-content:center;z-index:10;padding-top:60px}
-.modal.show{display:flex}
-.sheet{background:var(--card);border:1px solid var(--line);border-radius:26px;padding:22px 26px;width:min(400px,92vw);text-align:center;box-shadow:0 22px 70px rgba(0,0,0,.35)}
-.sheet h1{margin:0;font-size:22px;letter-spacing:-.045em}
-.qr{background:#fff;border-radius:10px;padding:10px;display:inline-block;margin:16px 0 8px}
-.qr svg{display:block;width:210px;height:210px}
-.pair-code{font-family:var(--mono);font-size:15px;font-weight:600;letter-spacing:.06em;user-select:text;-webkit-user-select:text}
-.steps{text-align:left;margin:14px 0 18px;padding-left:20px;color:var(--sub)}
+/* USB setup steps */
+.setup{padding:16px 18px}
+.setup .head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.stepper{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.step{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:650;color:var(--sub)}
+.step i{height:5px;border-radius:999px;background:var(--line)}
+.step.done i{background:var(--mint)}.step.done{color:var(--text)}
+.step.now i{background:var(--ember);animation:breathe 1.2s ease-in-out infinite alternate}.step.now{color:var(--text)}
+.step.fail i{background:var(--ember)}
+@keyframes breathe{from{opacity:.45}to{opacity:1}}
+.howto{margin:10px 0 0;padding-left:18px;color:var(--sub);text-align:left;display:inline-block}
+.howto li{margin:3px 0}
+
+/* About */
+.about{text-align:center;padding:34px 20px 26px}
+.about img{width:84px;height:84px;border-radius:20px}
+.about h1{margin:12px 0 2px;font-size:28px;letter-spacing:-.05em}
+.about .row{justify-content:center;margin-top:18px}
 .toast{position:fixed;bottom:18px;left:calc(50% + 108px);transform:translate(-50%,8px);background:var(--ink);color:var(--off-white);padding:8px 16px;border-radius:999px;font-weight:650;font-size:12.5px;opacity:0;transition:.2s;pointer-events:none;z-index:20;max-width:70vw}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 </style>
@@ -188,8 +188,6 @@ input{width:100%}
 <svg width="0" height="0" style="position:absolute">
   <symbol id="i-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></symbol>
   <symbol id="i-control" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V10m0-1.5a1.5 1.5 0 0 1 3 0V11m0-1a1.5 1.5 0 0 1 3 0v4.5a6 6 0 0 1-6 6h-.6a6 6 0 0 1-4.7-2.3L4.4 15a1.5 1.5 0 0 1 2.3-1.9L9 15"/></symbol>
-  <symbol id="i-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m5 8 4 4-4 4M12 16h7"/></symbol>
-  <symbol id="i-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
   <symbol id="i-usb" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v15m0 0a2 2 0 1 0 0 .01M12 3l-2 3h4zM12 13l-4-3V8M12 15l4-3v-2"/><rect x="7" y="6.5" width="2" height="2"/><circle cx="16" cy="9" r="1"/></symbol>
   <symbol id="i-back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 5 8 12l8 7"/></symbol>
   <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="7"/></symbol>
@@ -203,6 +201,7 @@ input{width:100%}
   <symbol id="i-single" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="7.5" y="3" width="9" height="18" rx="2"/></symbol>
   <symbol id="i-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></symbol>
   <symbol id="i-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5M12 7.8v.2"/></symbol>
   <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></symbol>
 </svg>
 
@@ -211,21 +210,14 @@ input{width:100%}
   <nav>
     <button data-view="phones" class="active"><svg><use href="#i-phone"/></svg>Phones<span class="count" id="nav-count"></span></button>
     <button data-view="control"><svg><use href="#i-control"/></svg>Control</button>
-    <button data-view="automation"><svg><use href="#i-auto"/></svg>Automation</button>
-    <button data-view="settings"><svg><use href="#i-gear"/></svg>Settings</button>
+    <button data-view="about"><svg><use href="#i-info"/></svg>About<span class="count" id="nav-update"></span></button>
   </nav>
   <div class="side-foot">
-    <button class="status-card" id="status-card" title="Gateway settings">
-      <div class="sc-top"><span class="sc-label">Status</span><span class="sc-pill off" id="sc-pill"><i></i><span id="conn-text">Connecting</span></span></div>
-      <div class="sc-host" id="sc-host">—</div>
-      <div class="sc-stats">
-        <div><b id="sc-phones">0</b><span>phones</span></div>
-        <div><b id="sc-ping">—</b><span>latency</span></div>
-        <div><b id="sc-auto">—</b><span>automation</span></div>
-      </div>
-      <div class="sc-spark" id="sc-spark"></div>
-      <div class="sc-foot"><span>End-to-end encrypted</span><span id="version"></span></div>
-    </button>
+    <div class="status-card">
+      <div class="sc-top"><b>Pairspan</b><div class="switch" id="power" role="switch" tabindex="0" title="Turn Pairspan on or off"></div></div>
+      <span class="sc-pill off" id="sc-pill"><i></i><span id="conn-text">Off</span></span>
+      <div class="sc-foot"><span id="sc-phones">No phones</span><span id="version"></span></div>
+    </div>
   </div>
 </aside>
 
@@ -240,11 +232,8 @@ input{width:100%}
 
     <!-- Phones -->
     <section class="view active" id="v-phones">
-      <h2>Paired phones</h2>
+      <div id="setup"></div>
       <div id="phones"></div>
-      <h2>Connected over USB / Wi-Fi adb</h2>
-      <div class="group" id="usb-list"></div>
-      <div class="note">Plug a phone in with USB debugging on to install the Pairspan app or turn on wireless ADB for the tunnel. Any phone listed here can be driven from <b>Control</b>.</div>
     </section>
 
     <!-- Control -->
@@ -288,65 +277,22 @@ input{width:100%}
       </div>
     </section>
 
-    <!-- Automation -->
-    <section class="view" id="v-automation">
-      <div class="group">
-        <div class="item">
-          <div class="icon-tile"><svg><use href="#i-auto"/></svg></div>
-          <div class="grow"><div class="title">Allow CLI and MCP</div><div class="meta">Scripts and AI agents on this Mac can control paired phones.</div></div>
-          <div class="switch" id="auto-switch" role="switch" tabindex="0"></div>
+    <!-- About -->
+    <section class="view" id="v-about">
+      <div class="group about">
+        <img src="icon.png" alt="">
+        <h1>Pairspan</h1>
+        <div class="sub" id="about-version"></div>
+        <div class="row">
+          <button class="primary" id="update-btn">Check for updates</button>
+          <button id="github-btn">GitHub</button>
         </div>
+        <div class="note" id="update-note"></div>
       </div>
-      <h2>Command line</h2>
-      <div class="group stack">
-        <div class="code mono"><span>pairspan devices</span><button data-copy="pairspan devices">Copy</button></div>
-        <div class="code mono"><span>pairspan screenshot -o screen.png</span><button data-copy="pairspan screenshot -o screen.png">Copy</button></div>
-        <div class="code mono"><span>pairspan click "Sign in"</span><button data-copy='pairspan click "Sign in"'>Copy</button></div>
-      </div>
-      <div class="note" id="cli-hint"></div>
-      <h2>AI agents (MCP)</h2>
-      <div class="group stack">
-        <div class="code mono"><span>claude mcp add pairspan -- pairspan mcp</span><button data-copy="claude mcp add pairspan -- pairspan mcp">Copy</button></div>
-        <div class="code mono"><span>{"mcpServers":{"pairspan":{"command":"pairspan","args":["mcp"]}}}</span><button data-copy='{"mcpServers":{"pairspan":{"command":"pairspan","args":["mcp"]}}}'>Copy</button></div>
-      </div>
-      <div class="note">The second line works for Cursor, VS Code and other MCP clients.</div>
-    </section>
-
-    <!-- Settings -->
-    <section class="view" id="v-settings">
-      <h2>Gateway</h2>
-      <div class="group stack">
-        <div class="row"><input id="gw" class="mono" spellcheck="false"><button id="gw-save">Save</button></div>
-        <div class="row"><span class="sub grow">Default: <span class="mono" id="gw-default"></span></span><button class="plain" id="gw-reset">Use default</button></div>
-        <div class="row"><input id="gw-token" class="mono" type="password" placeholder="Gateway token (only if the gateway asks for one)" spellcheck="false" autocomplete="off"><button id="gw-token-save">Save</button></div>
-      </div>
-      <div class="note">Phones and this Mac meet through the gateway; traffic is end-to-end encrypted, the gateway only routes it.</div>
-      <h2>About</h2>
-      <div class="group">
-        <div class="item"><div class="grow">Version</div><span class="sub" id="about-version"></span></div>
-        <div class="item"><div class="grow">This Mac's id</div><span class="mono sub" id="about-id"></span></div>
-        <div class="item"><div class="grow">Automation socket</div><span class="mono sub" id="about-socket"></span></div>
-      </div>
-      <h2>Activity</h2>
-      <div class="group"><pre class="log" id="log"></pre></div>
     </section>
   </div>
 </div>
 
-<div class="modal" id="modal">
-  <div class="sheet">
-    <h1>Pair a phone</h1>
-    <div class="qr" id="qr"></div>
-    <div class="pair-code" id="code"></div>
-    <div class="sub" id="expires"></div>
-    <ol class="steps">
-      <li>Open <b>Pairspan</b> on the Android phone.</li>
-      <li>Tap <b>Scan QR code</b>, or type the code above.</li>
-      <li>Keep this window open until the phone appears.</li>
-    </ol>
-    <button id="pair-cancel">Cancel</button>
-  </div>
-</div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -355,98 +301,73 @@ const { listen } = window.__TAURI__.event;
 const $ = (id) => document.getElementById(id);
 const el = (tag, props = {}, ...kids) => { const e = Object.assign(document.createElement(tag), props); e.append(...kids.filter(k => k != null)); return e; };
 const icon = (name) => { const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.innerHTML = `<use href="#i-${name}"/>`; return s; };
-let state = null, countdown = null, view = 'phones';
+let state = null, view = 'phones';
 
 function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 2600); }
 async function call(cmd, args) { try { return await invoke(cmd, args); } catch (e) { toast(String(e)); throw e; } }
 const busy = (b, fn) => async () => { b.disabled = true; try { await fn(); } catch {} b.disabled = false; };
 
 // ---------- Navigation ----------
-const titles = { phones: 'Phones', control: 'Control', automation: 'Automation', settings: 'Settings' };
+const titles = { phones: 'Phones', control: 'Control', about: 'About' };
 function show(v, serial) {
   view = v;
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('active', b.dataset.view === v));
   document.querySelectorAll('.view').forEach(s => s.classList.toggle('active', s.id === 'v-' + v));
   $('view-title').textContent = titles[v];
-  const actions = $('toolbar-actions'); actions.replaceChildren(); $('view-sub').textContent = '';
-  if (v === 'phones') {
-    const b = el('button', { className: 'primary icon' }, icon('plus'), 'Pair a phone'); b.onclick = startPairing; actions.append(b);
-    const r = el('button', { textContent: 'Refresh' }); r.onclick = refreshUsb; actions.append(r);
-    refreshUsb();
-  }
+  $('toolbar-actions').replaceChildren(); $('view-sub').textContent = '';
   if (v === 'control') loadTargets(serial);
-  if (v === 'settings') refreshLog();
 }
 document.querySelectorAll('nav button').forEach(b => b.onclick = () => show(b.dataset.view));
 
 // ---------- Phones ----------
+const STEPS = [['install', 'Install app'], ['pair', 'Pair'], ['adb', 'Wireless ADB'], ['done', 'Ready']];
+function renderSetup(s) {
+  const box = $('setup'); box.replaceChildren();
+  const u = s.setup;
+  if (!u) return;
+  const at = u.step === 'failed' ? -1 : STEPS.findIndex(([k]) => k === u.step);
+  const title = u.step === 'done' ? `${u.model} is ready — you can unplug it` : u.step === 'failed' ? `Could not set up ${u.model}` : `Setting up ${u.model}…`;
+  const stepper = el('div', { className: 'stepper' }, ...STEPS.map(([k, label], i) => el('div', {
+    className: 'step ' + (u.step === 'done' || i < at ? 'done' : i === at ? 'now' : u.step === 'failed' && i === 0 ? 'fail' : '') },
+    el('i'), el('span', { textContent: label }))));
+  const head = el('div', { className: 'head' }, el('div', { className: 'icon-tile' }, icon('usb')),
+    el('div', { className: 'grow' }, el('div', { className: 'title', textContent: title }),
+      el('div', { className: 'meta', textContent: u.error || 'Keep the phone plugged in. If it asks, allow USB debugging.' })));
+  box.append(el('div', { className: 'group setup' }, head, stepper), el('div', { style: 'height:16px' }));
+}
 function renderPhones(s) {
   const box = $('phones'); box.replaceChildren();
   const online = s.devices.filter(d => d.online).length;
   $('nav-count').textContent = s.devices.length ? `${online}/${s.devices.length}` : '';
   if (!s.devices.length) {
-    const b = el('button', { className: 'primary', textContent: 'Pair a phone' }); b.onclick = startPairing;
+    if (s.setup) return;
     box.append(el('div', { className: 'group empty' },
-      el('div', { className: 'icon-tile' }, icon('phone')),
-      el('b', { textContent: 'No phones yet' }),
-      el('p', { textContent: 'Install Pairspan on your Android phone, then pair it with a QR code.' }), b));
+      el('div', { className: 'icon-tile' }, icon('usb')),
+      el('b', { textContent: 'Plug your Android phone in' }),
+      el('p', { textContent: 'Connect it to this Mac with a USB cable once. Pairspan installs its app, pairs and turns on wireless ADB by itself.' }),
+      el('ol', { className: 'howto' },
+        el('li', { textContent: 'On the phone: Settings → About phone → tap Build number 7 times.' }),
+        el('li', { textContent: 'Settings → Developer options → turn on USB debugging.' }),
+        el('li', { textContent: 'Plug it in and allow this computer when asked.' }))));
     return;
   }
   const group = el('div', { className: 'group' });
   for (const d of s.devices) {
     const meta = [d.model, d.android && `Android ${d.android}`].filter(Boolean).join(' · ') || 'Android phone';
     const ctl = el('button', { textContent: 'Control', disabled: !d.online }); ctl.onclick = () => openControl(d.serial);
-    const copy = el('button', { className: 'plain', textContent: 'Copy serial' });
-    copy.onclick = () => { navigator.clipboard.writeText(d.serial); toast('Copied ' + d.serial); };
     const remove = el('button', { className: 'plain danger', textContent: 'Remove' });
     remove.onclick = busy(remove, async () => { await call('unpair', { id: d.id }); refresh(); });
+    const where = !s.enabled ? 'Pairspan is off' : d.online ? 'Connected' : 'Waiting for the phone';
     group.append(el('div', { className: 'item' },
       el('div', { className: 'icon-tile' }, icon('phone')),
       el('div', { className: 'grow' },
         el('div', { className: 'row', style: 'gap:7px' }, el('i', { className: 'dot ' + (d.online ? 'on' : '') }), el('span', { className: 'title', textContent: d.name })),
-        el('div', { className: 'meta', textContent: meta + ' · ' + (d.online ? 'online' : 'offline') }),
-        el('div', { className: 'mono sub', textContent: 'adb ' + d.serial })),
-      copy, remove, ctl));
+        el('div', { className: 'meta', textContent: `${meta} · ${where}` })),
+      remove, ctl));
   }
   box.append(group);
+  box.append(el('div', { className: 'note', textContent: 'After the phone restarts, plug it in once more so wireless ADB comes back.' }));
 }
-
-async function refreshUsb() {
-  const list = $('usb-list'); list.replaceChildren();
-  let devices = [];
-  try { devices = (await invoke('control_targets')).filter(t => t.kind !== 'paired'); }
-  catch (e) { list.append(el('div', { className: 'item sub', textContent: String(e) })); return; }
-  if (!devices.length) { list.append(el('div', { className: 'item sub', textContent: 'No phones on USB or Wi-Fi adb.' })); return; }
-  for (const d of devices) {
-    const ready = d.ready, usb = d.kind === 'usb';
-    const install = el('button', { className: 'plain', textContent: 'Install app', disabled: !ready });
-    install.onclick = busy(install, async () => { await call('usb_install_app', { serial: d.serial }); toast('Pairspan installed on ' + d.name); });
-    const prep = el('button', { className: 'plain', textContent: 'Enable wireless ADB', disabled: !ready });
-    prep.onclick = busy(prep, async () => { await call('usb_prepare', { serial: d.serial }); toast('Wireless ADB enabled. You can unplug the phone.'); });
-    const ctl = el('button', { textContent: 'Control', disabled: !ready }); ctl.onclick = () => openControl(d.serial);
-    list.append(el('div', { className: 'item' },
-      el('div', { className: 'icon-tile' }, icon(usb ? 'usb' : 'phone')),
-      el('div', { className: 'grow' },
-        el('div', { className: 'title', textContent: d.name }),
-        el('div', { className: 'meta mono', textContent: ready ? `${d.serial} · ${d.detail}` : `${d.serial} · ${d.detail} — allow USB debugging on the phone` })),
-      usb ? install : null, usb ? prep : null, ctl));
-  }
-}
-
-// ---------- Pairing ----------
-function renderPairing(p) {
-  const m = $('modal');
-  if (!p) { m.classList.remove('show'); clearInterval(countdown); return; }
-  $('qr').innerHTML = p.qr_svg; // generated locally by the app
-  $('code').textContent = p.code;
-  let left = p.expires_in;
-  clearInterval(countdown);
-  const tick = () => { $('expires').textContent = left > 0 ? `Expires in ${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}` : 'Expired'; left--; };
-  tick(); countdown = setInterval(tick, 1000);
-  m.classList.add('show');
-}
-async function startPairing() { const p = await call('start_pairing'); renderPairing(p); }
-$('pair-cancel').onclick = async () => { await call('cancel_pairing'); renderPairing(null); };
 
 // ---------- Control ----------
 // Two modes: "single" (one big screen + tools) and "grid" (every reachable phone live at once).
@@ -526,7 +447,7 @@ function setTarget(serial) {
   target = serial; $('target').value = serial;
   single.img.hidden = true; single.box.hidden = true; single.fps.textContent = ''; $('current').textContent = '';
   single.msg.hidden = false;
-  single.msg.textContent = serial ? 'Loading screen…' : 'No phone is reachable. Pair one, or connect it with USB debugging on.';
+  single.msg.textContent = serial ? 'Loading screen…' : 'No phone is reachable. Plug one in over USB to set it up.';
   if (serial) { makeStream(serial, single, 120, false).kick(0); refreshInfo(); }
 }
 $('target').onchange = (e) => setTarget(e.target.value);
@@ -538,7 +459,7 @@ function renderWall() {
   if (!ready.length) {
     wall.append(el('div', { className: 'group empty', style: 'grid-column:1/-1' },
       el('div', { className: 'icon-tile' }, icon('grid')), el('b', { textContent: 'No phones to show' }),
-      el('p', { textContent: 'Pair phones, or connect them with USB debugging on. Every reachable phone shows up here live.' })));
+      el('p', { textContent: 'Every connected phone shows up here live.' })));
     return;
   }
   ready.forEach((t, i) => {
@@ -552,7 +473,7 @@ function renderWall() {
       const b = el('button', { title: k }, icon(ic)); b.onclick = () => act(t.serial, 'key', { key: k }); keys.append(b);
     }
     const tile = el('div', { className: 'tile' },
-      el('div', { className: 'tile-head' }, el('i', { className: 'dot on' }), el('b', { textContent: t.name, title: `${t.serial} · ${t.detail}` }), fps, open),
+      el('div', { className: 'tile-head' }, el('i', { className: 'dot on' }), el('b', { textContent: t.name, title: t.detail }), fps, open),
       box, keys);
     box.addEventListener('focus', () => tile.classList.add('sel')); box.addEventListener('blur', () => tile.classList.remove('sel'));
     bindInput(img, box, t.serial);
@@ -642,82 +563,45 @@ const runShell = async () => {
 $('sh-run').onclick = runShell; $('sh-in').onkeydown = (e) => { if (e.key === 'Enter') runShell(); };
 $('shot-btn').onclick = busy($('shot-btn'), async () => { if (!target) return; const p = await call('control_save_screenshot', { serial: target }); toast('Saved ' + p.split('/').pop() + ' to Desktop'); });
 
-// ---------- Status card ----------
-const pings = [];
-async function ping() {
-  let ms = null;
-  try { ms = await invoke('gateway_ping'); } catch {}
-  pings.push(ms); if (pings.length > 18) pings.shift();
-  $('sc-ping').textContent = ms == null ? '—' : `${ms} ms`;
-  const max = Math.max(60, ...pings.filter(p => p != null));
-  const slots = [...Array(18 - pings.length).fill(undefined), ...pings];
-  $('sc-spark').replaceChildren(...slots.map((p, i) => {
-    const b = el('i', { className: i === slots.length - 1 ? 'last' : '' });
-    b.style.height = p == null ? '2px' : Math.max(3, Math.round(p / max * 20)) + 'px';
-    if (p === null) b.style.background = 'rgba(250,84,36,.5)';
-    return b;
-  }));
+// ---------- Switch, About ----------
+$('power').onclick = async () => { await call('set_enabled', { enabled: !state.enabled }); refresh(); };
+$('power').onkeydown = (e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); $('power').click(); } };
+let update = null;
+async function checkUpdate(quiet) {
+  try { update = await invoke('check_update'); } catch (e) { if (!quiet) $('update-note').textContent = String(e); return; }
+  $('nav-update').textContent = update.newer ? '•' : '';
+  $('update-btn').textContent = update.newer ? `Download ${update.latest}` : 'Check for updates';
+  if (!quiet || update.newer) $('update-note').textContent = update.newer ? `Version ${update.latest} is available.` : 'You have the latest version.';
 }
-$('status-card').onclick = () => show('settings');
-
-// ---------- Automation & settings ----------
-$('auto-switch').onclick = async () => {
-  const s = await invoke('settings');
-  await call('save_settings', { settings: { ...s, automation_enabled: !s.automation_enabled } });
-  refresh();
-};
-$('gw-save').onclick = async () => {
-  const s = await invoke('settings');
-  await call('save_settings', { settings: { ...s, gateway_url: $('gw').value } });
-  toast('Saved. Reconnecting…'); refresh();
-};
-$('gw-token-save').onclick = async () => {
-  const s = await invoke('settings'), t = $('gw-token').value.trim();
-  await call('save_settings', { settings: { ...s, gateway_token: t || null } });
-  $('gw-token').value = ''; $('gw-token').placeholder = t ? 'Token saved' : 'Gateway token (only if the gateway asks for one)'; toast('Saved. Reconnecting…'); refresh();
-};
-$('gw-reset').onclick = async () => {
-  const s = await invoke('settings');
-  await call('save_settings', { settings: { ...s, gateway_url: $('gw-default').textContent } });
-  $('gw').value = $('gw-default').textContent; toast('Using the default gateway. Reconnecting…'); refresh();
-};
-document.querySelectorAll('[data-copy]').forEach(b => b.onclick = () => { navigator.clipboard.writeText(b.dataset.copy); toast('Copied'); });
-async function refreshLog() { const l = $('log'); l.textContent = (await invoke('logs')).join('\n') || 'Nothing yet.'; l.scrollTop = l.scrollHeight; }
+$('update-btn').onclick = busy($('update-btn'), async () => {
+  if (update && update.newer) await call('open_url', { url: update.url }); else await checkUpdate(false);
+});
+$('github-btn').onclick = () => call('open_url', { url: 'https://github.com/ferhatozcelik/pairspan' });
 
 async function refresh() {
   state = await invoke('status');
-  $('sc-pill').classList.toggle('off', !state.connected);
-  $('conn-text').textContent = state.connected ? 'Live' : 'Offline';
-  $('sc-host').textContent = state.gateway.replace(/^wss?:\/\//, '').replace(/\/ws\/?$/, '');
-  $('sc-host').title = state.gateway;
+  $('power').classList.toggle('on', state.enabled);
+  $('power').setAttribute('aria-checked', state.enabled);
+  const pill = $('sc-pill');
+  pill.className = 'sc-pill' + (!state.enabled ? ' off' : state.connected ? '' : ' wait');
+  $('conn-text').textContent = !state.enabled ? 'Off' : state.connected ? 'On' : 'Waiting for internet';
   const online = state.devices.filter(d => d.online).length;
-  $('sc-phones').textContent = state.devices.length ? `${online}/${state.devices.length}` : '0';
-  $('sc-auto').textContent = state.automation ? 'On' : 'Off';
+  $('sc-phones').textContent = state.devices.length ? `${online} of ${state.devices.length} online` : 'No phones';
   $('version').textContent = 'v' + state.version;
-  $('about-version').textContent = state.version;
-  $('about-id').textContent = state.id;
-  $('auto-switch').classList.toggle('on', state.automation);
-  if (document.activeElement !== $('gw')) $('gw').value = state.gateway;
+  $('about-version').textContent = 'Version ' + state.version;
+  renderSetup(state);
   renderPhones(state);
-  renderPairing(state.pairing);
 }
 
 (async () => {
-  const cli = await invoke('cli_info');
-  $('cli-hint').textContent = cli.on_path ? 'The pairspan command is on your PATH.' : 'Run install.sh to add the pairspan command to your PATH' + (cli.bundled ? ` (bundled at ${cli.bundled}).` : '.');
-  $('about-socket').textContent = cli.socket;
-  $('gw-default').textContent = await invoke('default_gateway');
   await refresh(); show('phones');
-  ping(); setInterval(ping, 5000);
   await listen('pairspan://event', (e) => {
     const ev = e.payload;
-    if (ev.type === 'log') { const l = $('log'); l.textContent += (l.textContent ? '\n' : '') + ev.line; l.scrollTop = l.scrollHeight; }
     if (ev.type === 'paired') toast('Paired with ' + ev.device.name);
-    if (ev.type === 'pairing_failed') toast('Pairing failed: ' + ev.reason);
     if (ev.type !== 'log') refresh();
   });
-  await listen('pairspan://pair', () => { show('phones'); startPairing(); });
   setInterval(refresh, 5000);
+  checkUpdate(true); setInterval(() => checkUpdate(true), 6 * 3600 * 1000);
 })();
 </script>
 </body>
