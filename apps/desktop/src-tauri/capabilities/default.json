@@ -3,5 +3,5 @@
   "identifier": "default",
   "description": "Main window: core APIs and app events.",
   "windows": ["main"],
-  "permissions": ["core:default"]
+  "permissions": ["core:default", "core:window:allow-start-dragging"]
 }
