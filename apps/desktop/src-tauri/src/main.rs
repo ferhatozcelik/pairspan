@@ -34,6 +34,16 @@ fn set_enabled(agent: State<'_, AgentState>, enabled: bool) -> CmdResult<()> {
     agent.set_enabled(enabled).map_err(err)
 }
 
+#[tauri::command]
+fn set_user(
+    agent: State<'_, AgentState>,
+    user_id: Option<String>,
+    auth_token: Option<String>,
+    user_email: Option<String>,
+) -> CmdResult<()> {
+    agent.set_user(user_id, auth_token, user_email).map_err(err)
+}
+
 /// Latest GitHub release vs this build: `{ current, latest, newer, url }`.
 #[tauri::command]
 async fn check_update() -> CmdResult<Value> {
@@ -225,6 +235,7 @@ fn main() {
             status,
             unpair,
             set_enabled,
+            set_user,
             check_update,
             open_url,
             control_targets,

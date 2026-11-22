@@ -56,6 +56,8 @@ data class LinkState(
     val pairing: PairingState = PairingState.Idle,
     val activeStreams: Int = 0,
     val error: String? = null,
+    val userId: String? = null,
+    val userEmail: String? = null,
 )
 
 /**
@@ -70,6 +72,7 @@ class LinkService : Service() {
         private const val ACTION_PAIR = "pair"
         private const val ACTION_UNPAIR = "unpair"
         private const val ACTION_STOP = "stop"
+        private const val ACTION_SET_USER = "set_user"
         private const val CHANNEL = "link"
         private const val NOTIFICATION_ID = 1
         private const val ADB_PORT = 5555
@@ -81,6 +84,9 @@ class LinkService : Service() {
         fun stop(ctx: Context) = send(ctx, Intent(ctx, LinkService::class.java).setAction(ACTION_STOP))
         fun unpair(ctx: Context, id: String) =
             send(ctx, Intent(ctx, LinkService::class.java).setAction(ACTION_UNPAIR).putExtra("id", id))
+
+        fun setUser(ctx: Context) =
+            send(ctx, Intent(ctx, LinkService::class.java).setAction(ACTION_SET_USER))
 
         fun pair(ctx: Context, secret: String, pcId: String) = send(
             ctx,
@@ -155,6 +161,16 @@ class LinkService : Service() {
             when (action) {
                 ACTION_PAIR -> beginPairing(intent!!.getStringExtra("secret").orEmpty(), intent.getStringExtra("pc").orEmpty())
                 ACTION_UNPAIR -> removePc(intent!!.getStringExtra("id").orEmpty(), notifyPc = true)
+                ACTION_SET_USER -> {
+                    if (realtime != null) {
+                        store.userId?.let { uid ->
+                            val topic = Wire.userTopic(uid)
+                            realtime?.join(topic, "phone")
+                            announceAccount(topic)
+                        }
+                    }
+                    publishPcs()
+                }
                 ACTION_STOP -> {
                     shutdown()
                     stopSelf()
@@ -177,7 +193,7 @@ class LinkService : Service() {
         super.onDestroy()
     }
 
-    private fun shouldRun() = store.enabled && (store.pcs().isNotEmpty() || pending != null)
+    private fun shouldRun() = store.enabled && (store.pcs().isNotEmpty() || pending != null || store.userId != null)
 
     // ------------------------------------------------------------------ signalling
 
@@ -205,8 +221,25 @@ class LinkService : Service() {
         _state.update { it.copy(net = NetState.ONLINE, error = null) }
         topics.keys.forEach { realtime?.join(it, "phone") }
         pending?.let { realtime?.join(Wire.roomName(it.room), "phone") }
+        store.userId?.let { uid ->
+            val topic = Wire.userTopic(uid)
+            realtime?.join(topic, "phone")
+            announceAccount(topic)
+        }
         heartbeat(gen)
         publishPcs()
+    }
+
+    private fun announceAccount(topic: String) {
+        val announce = JSONObject()
+            .put("t", "account_announce")
+            .put("type", "android")
+            .put("id", store.deviceId)
+            .put("pub", Base64.encodeToString(store.publicKey, Base64.NO_WRAP))
+            .put("name", deviceName())
+            .put("model", "${Build.MANUFACTURER} ${Build.MODEL}".trim())
+            .put("android", Build.VERSION.RELEASE)
+        realtime?.broadcast(topic, announce)
     }
 
     private fun heartbeat(gen: Int) {
@@ -264,6 +297,43 @@ class LinkService : Service() {
                 val link = Wire.linkName(pub, store.publicKey)
                 topics[link] = p.pcId to pub
                 realtime?.join(link, "phone")
+            }
+            "account_announce" -> {
+                val uid = store.userId ?: return
+                if (topic != Wire.userTopic(uid)) return
+                if (msg.optString("type") != "desktop") return
+                val pubB64 = msg.optString("pub").takeIf { it.isNotBlank() } ?: return
+                val pub = try { Base64.decode(pubB64, Base64.DEFAULT) } catch (_: Exception) { return }
+                val pcId = com.pairspan.app.core.peerId(pub)
+                val pcName = msg.optString("name", "Computer")
+                val link = Wire.linkName(pub, store.publicKey)
+                if (!topics.containsKey(link)) {
+                    topics[link] = pcId to pub
+                    store.upsertPc(PairedPc(pcId, pub.hex(), pcName, "desktop", System.currentTimeMillis()))
+                    realtime?.join(link, "phone")
+                    wantLink(link)
+                    publishPcs()
+                }
+                val ack = JSONObject()
+                    .put("t", "account_ack")
+                    .put("id", store.deviceId)
+                    .put("pub", Base64.encodeToString(store.publicKey, Base64.NO_WRAP))
+                    .put("name", deviceName())
+                realtime?.broadcast(topic, ack)
+            }
+            "account_ack" -> {
+                val pubB64 = msg.optString("pub").takeIf { it.isNotBlank() } ?: return
+                val pub = try { Base64.decode(pubB64, Base64.DEFAULT) } catch (_: Exception) { return }
+                val pcId = com.pairspan.app.core.peerId(pub)
+                val pcName = msg.optString("name", "Computer")
+                val link = Wire.linkName(pub, store.publicKey)
+                if (!topics.containsKey(link)) {
+                    topics[link] = pcId to pub
+                    store.upsertPc(PairedPc(pcId, pub.hex(), pcName, "desktop", System.currentTimeMillis()))
+                    realtime?.join(link, "phone")
+                    wantLink(link)
+                    publishPcs()
+                }
             }
             "offer" -> {
                 val (pcId, _) = topics[topic] ?: return
@@ -495,7 +565,7 @@ class LinkService : Service() {
 
     private fun publishPcs() {
         val list = store.pcs().map { PcView(it.id, it.name, it.os, links.containsKey(it.id) && links[it.id]?.pairingPub == null) }
-        _state.update { it.copy(pcs = list, enabled = store.enabled) }
+        _state.update { it.copy(pcs = list, enabled = store.enabled, userId = store.userId, userEmail = store.userEmail) }
         refreshNotification()
     }
 

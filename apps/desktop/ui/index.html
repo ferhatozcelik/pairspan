@@ -180,6 +180,20 @@ input{width:100%}
 .about .row{justify-content:center;margin-top:18px}
 .toast{position:fixed;bottom:18px;left:calc(50% + 108px);transform:translate(-50%,8px);background:var(--ink);color:var(--off-white);padding:8px 16px;border-radius:999px;font-weight:650;font-size:12.5px;opacity:0;transition:.2s;pointer-events:none;z-index:20;max-width:70vw}
 .toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* Account card */
+.account-card{margin:0 2px 10px;padding:10px 12px;border-radius:18px;background:var(--card);border:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
+.account-info{display:flex;align-items:center;gap:8px;min-width:0}
+.account-avatar{width:26px;height:26px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-weight:700;font-size:12px;flex:none}
+.account-email{font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.account-btn{padding:5px 12px;font-size:12px;min-height:26px}
+
+/* Modal */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(4px);z-index:100;display:flex;align-items:center;justify-content:center}
+.modal-dialog{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px;width:320px;max-width:90vw;box-shadow:0 12px 32px rgba(0,0,0,.25)}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.modal-header h3{margin:0;font-size:16px;font-weight:700;letter-spacing:-.03em}
+.close-btn{padding:2px 8px;font-size:16px;color:var(--sub)}
 </style>
 </head>
 <body>
@@ -213,6 +227,7 @@ input{width:100%}
     <button data-view="about"><svg><use href="#i-info"/></svg>About<span class="count" id="nav-update"></span></button>
   </nav>
   <div class="side-foot">
+    <div id="account-box"></div>
     <div class="status-card">
       <div class="sc-top"><b>Pairspan</b><div class="switch" id="power" role="switch" tabindex="0" title="Turn Pairspan on or off"></div></div>
       <span class="sc-pill off" id="sc-pill"><i></i><span id="conn-text">Off</span></span>
@@ -295,6 +310,27 @@ input{width:100%}
 
 <div class="toast" id="toast"></div>
 
+<div class="modal-backdrop" id="auth-modal" hidden>
+  <div class="modal-dialog">
+    <div class="modal-header">
+      <h3 id="auth-title">Account</h3>
+      <button class="plain close-btn" id="auth-close">✕</button>
+    </div>
+    <div class="seg" style="width:100%;margin-bottom:14px;box-sizing:border-box;">
+      <button type="button" id="auth-tab-login" class="on" style="flex:1;justify-content:center;">Sign In</button>
+      <button type="button" id="auth-tab-register" style="flex:1;justify-content:center;">Register</button>
+    </div>
+    <form id="auth-form" onsubmit="return false;">
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <input type="email" id="auth-email" placeholder="Email address" required autocomplete="email">
+        <input type="password" id="auth-password" placeholder="Password (min 6 chars)" required autocomplete="current-password">
+        <div id="auth-error" class="sub" style="color:var(--red);font-size:11.5px;" hidden></div>
+        <button type="submit" class="primary" id="auth-submit" style="margin-top:6px;width:100%;">Sign In</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script>
 const { invoke } = window.__TAURI__.core;
 const { listen } = window.__TAURI__.event;
@@ -302,6 +338,10 @@ const $ = (id) => document.getElementById(id);
 const el = (tag, props = {}, ...kids) => { const e = Object.assign(document.createElement(tag), props); e.append(...kids.filter(k => k != null)); return e; };
 const icon = (name) => { const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.innerHTML = `<use href="#i-${name}"/>`; return s; };
 let state = null, view = 'phones';
+
+const SUPABASE_URL = "https://jcqkznspriizdmsbjvvj.supabase.co";
+const SUPABASE_KEY = "sb_publishable_WFPzgHprFKVKb7CKApBnWQ_fnp4gVcm";
+let currentUser = null, currentToken = null, authMode = 'login';
 
 function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 2600); }
 async function call(cmd, args) { try { return await invoke(cmd, args); } catch (e) { toast(String(e)); throw e; } }
@@ -563,6 +603,154 @@ const runShell = async () => {
 $('sh-run').onclick = runShell; $('sh-in').onkeydown = (e) => { if (e.key === 'Enter') runShell(); };
 $('shot-btn').onclick = busy($('shot-btn'), async () => { if (!target) return; const p = await call('control_save_screenshot', { serial: target }); toast('Saved ' + p.split('/').pop() + ' to Desktop'); });
 
+// ---------- Auth & Account ----------
+function initAuth() {
+  try {
+    const raw = localStorage.getItem('pairspan.auth');
+    if (raw) {
+      const data = JSON.parse(raw);
+      currentUser = data.user;
+      currentToken = data.token;
+    }
+  } catch {}
+}
+
+async function syncDevice(user, token) {
+  if (!state || !user || !token) return;
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/pairspan_devices`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates'
+      },
+      body: JSON.stringify({
+        user_id: user.id,
+        device_id: state.id,
+        device_name: 'Desktop PC',
+        device_type: 'desktop',
+        public_key: state.public_key || null,
+        last_seen_at: new Date().toISOString()
+      })
+    });
+  } catch (e) {
+    console.warn('Sync device error:', e);
+  }
+}
+
+function renderAccount() {
+  const box = $('account-box');
+  if (!box) return;
+  box.replaceChildren();
+  const email = (currentUser && currentUser.email) || (state && state.user_email);
+  if (email) {
+    const initial = email.charAt(0).toUpperCase();
+    const card = el('div', { className: 'account-card' },
+      el('div', { className: 'account-info' },
+        el('div', { className: 'account-avatar', textContent: initial }),
+        el('div', { className: 'account-email', textContent: email, title: email })
+      ),
+      el('button', { className: 'account-btn plain danger', textContent: 'Sign Out', onclick: logout })
+    );
+    box.append(card);
+  } else {
+    const card = el('div', { className: 'account-card' },
+      el('div', { className: 'meta sub', style: 'font-size:11.5px', textContent: 'Sync across devices' }),
+      el('button', { className: 'account-btn primary', textContent: 'Sign In / Register', onclick: openAuthModal })
+    );
+    box.append(card);
+  }
+}
+
+function openAuthModal() {
+  setAuthTab('login');
+  $('auth-error').hidden = true;
+  $('auth-email').value = '';
+  $('auth-password').value = '';
+  $('auth-modal').hidden = false;
+}
+function closeAuthModal() {
+  $('auth-modal').hidden = true;
+}
+function setAuthTab(mode) {
+  authMode = mode;
+  $('auth-tab-login').classList.toggle('on', mode === 'login');
+  $('auth-tab-register').classList.toggle('on', mode === 'register');
+  $('auth-title').textContent = mode === 'login' ? 'Sign In to Pairspan' : 'Create Pairspan Account';
+  $('auth-submit').textContent = mode === 'login' ? 'Sign In' : 'Create Account';
+  $('auth-error').hidden = true;
+}
+$('auth-tab-login').onclick = () => setAuthTab('login');
+$('auth-tab-register').onclick = () => setAuthTab('register');
+$('auth-close').onclick = closeAuthModal;
+$('auth-modal').onclick = (e) => { if (e.target === $('auth-modal')) closeAuthModal(); };
+
+$('auth-form').onsubmit = async () => {
+  const email = $('auth-email').value.trim();
+  const password = $('auth-password').value;
+  if (!email || !password) return;
+  const errBox = $('auth-error');
+  errBox.hidden = true;
+  const btn = $('auth-submit');
+  btn.disabled = true;
+  btn.textContent = 'Please wait…';
+  try {
+    let res, data;
+    if (authMode === 'login') {
+      res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      data = await res.json();
+      if (!res.ok) throw new Error(data.error_description || data.msg || data.message || 'Login failed');
+      currentUser = data.user;
+      currentToken = data.access_token;
+    } else {
+      res = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      data = await res.json();
+      if (!res.ok) throw new Error(data.error_description || data.msg || data.message || 'Registration failed');
+      if (data.access_token) {
+        currentUser = data.user || data;
+        currentToken = data.access_token;
+      } else {
+        toast('Account created! Please sign in.');
+        setAuthTab('login');
+        btn.disabled = false;
+        btn.textContent = 'Sign In';
+        return;
+      }
+    }
+    localStorage.setItem('pairspan.auth', JSON.stringify({ user: currentUser, token: currentToken }));
+    await call('set_user', { userId: currentUser.id, authToken: currentToken, userEmail: currentUser.email });
+    await syncDevice(currentUser, currentToken);
+    closeAuthModal();
+    toast(`Welcome, ${currentUser.email}!`);
+    refresh();
+  } catch (err) {
+    errBox.textContent = err.message;
+    errBox.hidden = false;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = authMode === 'login' ? 'Sign In' : 'Create Account';
+  }
+};
+
+async function logout() {
+  currentUser = null;
+  currentToken = null;
+  localStorage.removeItem('pairspan.auth');
+  await call('set_user', { userId: null, authToken: null, userEmail: null });
+  toast('Signed out');
+  refresh();
+}
+
 // ---------- Switch, About ----------
 $('power').onclick = async () => { await call('set_enabled', { enabled: !state.enabled }); refresh(); };
 $('power').onkeydown = (e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); $('power').click(); } };
@@ -589,12 +777,20 @@ async function refresh() {
   $('sc-phones').textContent = state.devices.length ? `${online} of ${state.devices.length} online` : 'No phones';
   $('version').textContent = 'v' + state.version;
   $('about-version').textContent = 'Version ' + state.version;
+  renderAccount();
   renderSetup(state);
   renderPhones(state);
 }
 
 (async () => {
+  initAuth();
   await refresh(); show('phones');
+  if (currentUser && currentToken) {
+    if (!state.user_id || state.user_id !== currentUser.id) {
+      await call('set_user', { userId: currentUser.id, authToken: currentToken, userEmail: currentUser.email });
+    }
+    syncDevice(currentUser, currentToken);
+  }
   await listen('pairspan://event', (e) => {
     const ev = e.payload;
     if (ev.type === 'paired') toast('Paired with ' + ev.device.name);

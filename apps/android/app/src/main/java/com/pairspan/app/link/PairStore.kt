@@ -32,6 +32,28 @@ class PairStore(context: Context) {
 
     val publicKey: ByteArray get() = P256.compress(identity.public)
 
+    val deviceId: String get() = com.pairspan.app.core.peerId(publicKey)
+
+    var userId: String?
+        get() = prefs.getString("user_id", null)
+        set(v) = prefs.edit().putString("user_id", v).apply()
+
+    var authToken: String?
+        get() = prefs.getString("auth_token", null)
+        set(v) = prefs.edit().putString("auth_token", v).apply()
+
+    var userEmail: String?
+        get() = prefs.getString("user_email", null)
+        set(v) = prefs.edit().putString("user_email", v).apply()
+
+    fun clearAuth() {
+        prefs.edit()
+            .remove("user_id")
+            .remove("auth_token")
+            .remove("user_email")
+            .apply()
+    }
+
     var enabled: Boolean
         get() = prefs.getBoolean("enabled", true)
         set(v) = prefs.edit().putBoolean("enabled", v).apply()

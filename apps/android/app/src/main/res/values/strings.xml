@@ -66,4 +66,16 @@
     <string name="update_downloading">Downloading… %1$d%%</string>
     <string name="update_install">Install</string>
     <string name="update_error">Update check failed: %1$s</string>
+    <string name="account_title">Account</string>
+    <string name="account_sync_title">Pairspan Account</string>
+    <string name="account_sync_subtitle">Sign in to auto-pair across devices</string>
+    <string name="action_sign_in">Sign In</string>
+    <string name="action_sign_out">Sign Out</string>
+    <string name="action_create_account">Create Account</string>
+    <string name="dialog_sign_in_title">Sign In to Pairspan</string>
+    <string name="dialog_register_title">Create Pairspan Account</string>
+    <string name="tab_sign_in">Sign In</string>
+    <string name="tab_register">Register</string>
+    <string name="field_email">Email</string>
+    <string name="field_password">Password</string>
 </resources>

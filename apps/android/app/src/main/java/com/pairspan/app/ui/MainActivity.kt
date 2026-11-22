@@ -9,6 +9,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
+import android.util.Base64
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -50,6 +51,15 @@ import com.pairspan.app.link.NetState
 import com.pairspan.app.link.PairStore
 import com.pairspan.app.link.PairingState
 import com.pairspan.app.link.PcView
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONObject
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 import kotlin.concurrent.thread
 
 class MainActivity : ComponentActivity() {
@@ -121,12 +131,16 @@ class MainActivity : ComponentActivity() {
         LaunchedEffect(state.enabled) { enabled = store.enabled }
         // Wireless ADB comes up right after pairing; look again while the screen is open.
         LaunchedEffect(state.pcs.size, state.pairing) { refreshChecks() }
-        Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) { HomeScreen(state) }
+        var showAuth by remember { mutableStateOf(false) }
+        Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
+            HomeScreen(state, onOpenAuth = { showAuth = true })
+        }
         PairingDialog(state.pairing)
+        AuthDialog(showAuth, onDismiss = { showAuth = false })
     }
 
     @Composable
-    private fun HomeScreen(state: LinkState) {
+    private fun HomeScreen(state: LinkState, onOpenAuth: () -> Unit) {
         var removing by remember { mutableStateOf<PcView?>(null) }
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -148,6 +162,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
             item { Hero(state) }
+            item { AccountCard(state, onOpenAuth = onOpenAuth) }
             item { SectionLabel(stringResource(R.string.section_setup)) }
             item { Steps(state) }
             if (state.pcs.isNotEmpty()) {
@@ -387,5 +402,209 @@ class MainActivity : ComponentActivity() {
                 .border(1.dp, MaterialTheme.colorScheme.outlineVariant, MaterialTheme.shapes.large),
             content = content,
         )
+    }
+
+    @Composable
+    private fun AccountCard(state: LinkState, onOpenAuth: () -> Unit) {
+        val s = LocalStatus.current
+        val email = state.userEmail ?: store.userEmail
+        Row(
+            Modifier.fillMaxWidth().clip(MaterialTheme.shapes.large).background(MaterialTheme.colorScheme.surface)
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, MaterialTheme.shapes.large).padding(horizontal = 18.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                Modifier.size(32.dp).background(if (email != null) s.online.copy(alpha = .18f) else s.action.copy(alpha = .14f), CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = email?.firstOrNull()?.uppercase() ?: "A",
+                    color = if (email != null) s.online else s.action,
+                    style = MaterialTheme.typography.titleMedium,
+                )
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = if (email != null) stringResource(R.string.account_title) else stringResource(R.string.account_sync_title),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Text(
+                    text = email ?: stringResource(R.string.account_sync_subtitle),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            if (email != null) {
+                TextButton(onClick = ::logout) {
+                    Text(stringResource(R.string.action_sign_out), color = MaterialTheme.colorScheme.primary)
+                }
+            } else {
+                Button(
+                    onClick = onOpenAuth,
+                    contentPadding = PaddingValues(horizontal = 14.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.onBackground, contentColor = MaterialTheme.colorScheme.background),
+                ) {
+                    Text(stringResource(R.string.action_sign_in), style = MaterialTheme.typography.labelLarge)
+                }
+            }
+        }
+    }
+
+    @Composable
+    private fun AuthDialog(show: Boolean, onDismiss: () -> Unit) {
+        if (!show) return
+        var isRegister by remember { mutableStateOf(false) }
+        var email by remember { mutableStateOf("") }
+        var password by remember { mutableStateOf("") }
+        var error by remember { mutableStateOf<String?>(null) }
+        var loading by remember { mutableStateOf(false) }
+
+        AlertDialog(
+            onDismissRequest = { if (!loading) onDismiss() },
+            title = {
+                Text(stringResource(if (isRegister) R.string.dialog_register_title else R.string.dialog_sign_in_title))
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FilterChip(
+                            selected = !isRegister,
+                            onClick = { isRegister = false; error = null },
+                            label = { Text(stringResource(R.string.tab_sign_in)) },
+                        )
+                        FilterChip(
+                            selected = isRegister,
+                            onClick = { isRegister = true; error = null },
+                            label = { Text(stringResource(R.string.tab_register)) },
+                        )
+                    }
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = { email = it },
+                        label = { Text(stringResource(R.string.field_email)) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text(stringResource(R.string.field_password)) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    error?.let {
+                        Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    enabled = !loading && email.isNotBlank() && password.isNotBlank(),
+                    onClick = {
+                        loading = true
+                        error = null
+                        supabaseAuth(isRegister, email.trim(), password) { err ->
+                            loading = false
+                            if (err == null) {
+                                onDismiss()
+                            } else {
+                                error = err
+                            }
+                        }
+                    },
+                ) {
+                    if (loading) {
+                        CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
+                    } else {
+                        Text(stringResource(if (isRegister) R.string.action_create_account else R.string.action_sign_in))
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onDismiss, enabled = !loading) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            },
+        )
+    }
+
+    private fun supabaseAuth(isRegister: Boolean, email: String, pass: String, onDone: (String?) -> Unit) {
+        val client = OkHttpClient()
+        val mediaType = "application/json; charset=utf-8".toMediaType()
+        val path = if (isRegister) "/auth/v1/signup" else "/auth/v1/token?grant_type=password"
+        val body = JSONObject().put("email", email).put("password", pass).toString().toRequestBody(mediaType)
+        val req = Request.Builder()
+            .url("https://jcqkznspriizdmsbjvvj.supabase.co$path")
+            .header("apikey", "sb_publishable_WFPzgHprFKVKb7CKApBnWQ_fnp4gVcm")
+            .header("Content-Type", "application/json")
+            .post(body)
+            .build()
+
+        thread {
+            try {
+                val resp = client.newCall(req).execute()
+                val text = resp.body?.string().orEmpty()
+                val json = JSONObject(text)
+                if (!resp.isSuccessful) {
+                    val err = json.optString("error_description").takeIf { it.isNotBlank() }
+                        ?: json.optString("msg").takeIf { it.isNotBlank() }
+                        ?: json.optString("message", "Authentication failed")
+                    runOnUiThread { onDone(err) }
+                    return@thread
+                }
+
+                val token = json.optString("access_token")
+                val user = json.optJSONObject("user") ?: if (json.has("id")) json else null
+                val uid = user?.optString("id").orEmpty()
+                val uEmail = user?.optString("email").orEmpty()
+
+                if (token.isNotBlank() && uid.isNotBlank()) {
+                    store.userId = uid
+                    store.authToken = token
+                    store.userEmail = uEmail
+                    // Sync device to pairspan_devices table
+                    try {
+                        val devBody = JSONObject()
+                            .put("user_id", uid)
+                            .put("device_id", store.deviceId)
+                            .put("device_name", Build.MODEL)
+                            .put("device_type", "android")
+                            .put("public_key", Base64.encodeToString(store.publicKey, Base64.NO_WRAP))
+                            .put("last_seen_at", SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply {
+                                timeZone = TimeZone.getTimeZone("UTC")
+                            }.format(Date()))
+                            .toString().toRequestBody(mediaType)
+
+                        val devReq = Request.Builder()
+                            .url("https://jcqkznspriizdmsbjvvj.supabase.co/rest/v1/pairspan_devices")
+                            .header("apikey", "sb_publishable_WFPzgHprFKVKb7CKApBnWQ_fnp4gVcm")
+                            .header("Authorization", "Bearer $token")
+                            .header("Prefer", "resolution=merge-duplicates")
+                            .header("Content-Type", "application/json")
+                            .post(devBody)
+                            .build()
+                        client.newCall(devReq).execute()
+                    } catch (_: Exception) {}
+
+                    runOnUiThread {
+                        LinkService.setUser(this@MainActivity)
+                        if (store.enabled) LinkService.start(this@MainActivity)
+                        onDone(null)
+                    }
+                } else if (isRegister) {
+                    runOnUiThread { onDone("Account created! Please sign in.") }
+                } else {
+                    runOnUiThread { onDone("Failed to get credentials") }
+                }
+            } catch (e: Exception) {
+                runOnUiThread { onDone(e.message ?: "Connection error") }
+            }
+        }
+    }
+
+    private fun logout() {
+        store.clearAuth()
+        LinkService.setUser(this)
     }
 }

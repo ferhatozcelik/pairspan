@@ -52,3 +52,9 @@ pub fn link_name(pc: &[u8; 33], phone: &[u8; 33]) -> String {
 pub fn room_name(room: &str) -> String {
     format!("r:{}", &room[..40.min(room.len())])
 }
+
+/// Signalling channel for a user account: devices logged in under the same account join here.
+pub fn user_topic(user_id: &str) -> String {
+    format!("user:{user_id}")
+}
+

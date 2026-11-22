@@ -39,11 +39,19 @@ pub fn write_private(path: &Path, data: &[u8]) -> Result<()> {
 pub struct Settings {
     /// The on/off switch: when off, Pairspan leaves the signalling service and closes every link.
     pub enabled: bool,
+    pub user_id: Option<String>,
+    pub auth_token: Option<String>,
+    pub user_email: Option<String>,
 }
 
 impl Default for Settings {
     fn default() -> Self {
-        Self { enabled: true }
+        Self {
+            enabled: true,
+            user_id: None,
+            auth_token: None,
+            user_email: None,
+        }
     }
 }
 

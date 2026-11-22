@@ -60,11 +60,14 @@ pub struct Setup {
 pub struct Status {
     pub version: &'static str,
     pub id: PeerId,
+    pub public_key: String,
     pub enabled: bool,
     /// Connected to the signalling service.
     pub connected: bool,
     pub devices: Vec<DeviceStatus>,
     pub setup: Option<Setup>,
+    pub user_id: Option<String>,
+    pub user_email: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -258,7 +261,9 @@ impl Agent {
     }
 
     pub fn set_enabled(&self, enabled: bool) -> Result<()> {
-        self.update_settings(Settings { enabled })
+        let mut settings = self.settings();
+        settings.enabled = enabled;
+        self.update_settings(settings)
     }
 
     pub fn enabled(&self) -> bool {
@@ -280,11 +285,60 @@ impl Agent {
         Status {
             version: env!("CARGO_PKG_VERSION"),
             id: self.identity.id(),
+            public_key: self.identity.public_b64(),
             enabled: store.settings.enabled,
             connected: self.connected.load(Ordering::Relaxed),
             devices,
             setup: self.setup.lock().unwrap().clone(),
+            user_id: store.settings.user_id.clone(),
+            user_email: store.settings.user_email.clone(),
         }
+    }
+
+    pub fn user_id(&self) -> Option<String> {
+        self.store.lock().unwrap().settings.user_id.clone()
+    }
+
+    pub fn user_email(&self) -> Option<String> {
+        self.store.lock().unwrap().settings.user_email.clone()
+    }
+
+    pub fn auth_token(&self) -> Option<String> {
+        self.store.lock().unwrap().settings.auth_token.clone()
+    }
+
+    pub fn public_key_b64(&self) -> String {
+        self.identity.public_b64()
+    }
+
+    pub fn set_user(&self, user_id: Option<String>, auth_token: Option<String>, user_email: Option<String>) -> Result<()> {
+        let (old_user, new_user) = {
+            let mut store = self.store.lock().unwrap();
+            let old = store.settings.user_id.clone();
+            store.settings.user_id = user_id.clone();
+            store.settings.auth_token = auth_token;
+            store.settings.user_email = user_email;
+            store.save_settings()?;
+            (old, user_id)
+        };
+        if let Some(signal) = self.signal() {
+            if let Some(old) = old_user {
+                signal.leave(&wire::user_topic(&old));
+            }
+            if let Some(new) = new_user {
+                signal.join(&wire::user_topic(&new), "pc");
+                let announce = json!({
+                    "t": "account_announce",
+                    "type": "desktop",
+                    "id": self.id().to_string(),
+                    "pub": self.identity.public_b64(),
+                    "name": self.host_name,
+                });
+                signal.broadcast(&wire::user_topic(&new), announce);
+            }
+        }
+        self.changed();
+        Ok(())
     }
 
     pub fn devices(&self) -> Vec<DeviceStatus> {
@@ -344,6 +398,18 @@ impl Agent {
                     if let Some(room) = room {
                         signal.join(&room, "pc");
                     }
+                    if let Some(user_id) = self.user_id() {
+                        let topic = wire::user_topic(&user_id);
+                        signal.join(&topic, "pc");
+                        let announce = json!({
+                            "t": "account_announce",
+                            "type": "desktop",
+                            "id": self.id().to_string(),
+                            "pub": self.identity.public_b64(),
+                            "name": self.host_name,
+                        });
+                        signal.broadcast(&topic, announce);
+                    }
                     loop {
                         tokio::select! {
                             m = rx.recv() => match m {
@@ -380,12 +446,28 @@ impl Agent {
 
     async fn on_signal(&self, msg: Incoming) {
         match msg {
-            Incoming::Presence { topic, key, online: true } if key == "phone" => {
-                let link = self.links.lock().unwrap().get(&topic).copied();
-                if let Some((id, _)) = link {
-                    let up = self.existing_peer(&id).is_some_and(|p| p.ready.load(Ordering::Relaxed));
-                    if !up {
-                        self.connect_phone(id, topic).await;
+            Incoming::Presence { topic, key, online: true } => {
+                if let Some(user_id) = self.user_id() {
+                    if topic == wire::user_topic(&user_id) && key != "pc" {
+                        if let Some(s) = self.signal() {
+                            let announce = json!({
+                                "t": "account_announce",
+                                "type": "desktop",
+                                "id": self.id().to_string(),
+                                "pub": self.identity.public_b64(),
+                                "name": self.host_name,
+                            });
+                            s.broadcast(&topic, announce);
+                        }
+                    }
+                }
+                if key == "phone" {
+                    let link = self.links.lock().unwrap().get(&topic).copied();
+                    if let Some((id, _)) = link {
+                        let up = self.existing_peer(&id).is_some_and(|p| p.ready.load(Ordering::Relaxed));
+                        if !up {
+                            self.connect_phone(id, topic).await;
+                        }
                     }
                 }
             }
@@ -411,6 +493,17 @@ impl Agent {
                     }
                 }
                 Some("phone") => self.on_room_phone(&topic, &payload),
+                Some("account_announce") => self.on_account_announce(&topic, &payload).await,
+                Some("account_ack") => {
+                    let Some(public_b64) = payload["pub"].as_str() else { return };
+                    if let Ok(key) = decode_public(public_b64) {
+                        let id = PeerId::from_pubkey(&key);
+                        let link_name = wire::link_name(self.identity.public(), &key);
+                        if !self.links.lock().unwrap().contains_key(&link_name) {
+                            self.add_link(id, public_b64);
+                        }
+                    }
+                }
                 _ => {}
             },
             Incoming::Presence { .. } => {}
@@ -758,6 +851,72 @@ impl Agent {
             self.log(format!("Pairing: phone {} answered, connecting…", id.short()));
             self.add_link(id, public);
         }
+    }
+
+    async fn on_account_announce(&self, topic: &str, payload: &Value) {
+        let Some(user_id) = self.user_id() else { return };
+        if topic != wire::user_topic(&user_id) {
+            return;
+        }
+        let dev_type = payload["type"].as_str().unwrap_or_default();
+        if dev_type == "desktop" {
+            return;
+        }
+        let Some(public_b64) = payload["pub"].as_str() else { return };
+        let Ok(key) = decode_public(public_b64) else { return };
+        let id = PeerId::from_pubkey(&key);
+        let name = payload["name"].as_str().unwrap_or("Android phone");
+        let model = payload["model"].as_str().unwrap_or_default();
+        let android = payload["android"].as_str().unwrap_or_default();
+
+        let is_new = {
+            let mut store = self.store.lock().unwrap();
+            if let Some(d) = store.devices.iter_mut().find(|d| d.id == id) {
+                if !name.is_empty() { d.name = name.to_string(); }
+                if !model.is_empty() { d.model = model.to_string(); }
+                if !android.is_empty() { d.android = android.to_string(); }
+                let _ = store.save_devices();
+                false
+            } else {
+                let d = Device {
+                    id,
+                    public: public_b64.to_string(),
+                    name: name.to_string(),
+                    model: model.to_string(),
+                    android: android.to_string(),
+                    adb_port: store.next_adb_port(),
+                    paired_at: now_string(),
+                    usb_serial: String::new(),
+                };
+                store.devices.push(d.clone());
+                let _ = store.save_devices();
+                self.spawn_listener(&d);
+                true
+            }
+        };
+
+        let link_name = wire::link_name(self.identity.public(), &key);
+        if !self.links.lock().unwrap().contains_key(&link_name) {
+            self.add_link(id, public_b64);
+        }
+
+        if is_new {
+            self.log(format!("Linked with account phone {name} ({})", id.short()));
+            let _ = self.events.send(Event::Paired {
+                device: self.store.lock().unwrap().device(&id).cloned().unwrap(),
+            });
+        }
+        if let Some(s) = self.signal() {
+            let resp = json!({
+                "t": "account_ack",
+                "id": self.id().to_string(),
+                "pub": self.identity.public_b64(),
+                "name": self.host_name,
+                "link": link_name,
+            });
+            s.broadcast(topic, resp);
+        }
+        self.changed();
     }
 
     fn pairing_failed(&self, reason: String) {

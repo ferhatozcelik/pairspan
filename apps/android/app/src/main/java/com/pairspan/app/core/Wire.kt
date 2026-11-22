@@ -30,4 +30,7 @@ object Wire {
 
     /** Channel where the phone and computer exchange keys during the USB pairing. */
     fun roomName(room: String): String = "r:" + room.take(40)
+
+    /** Signalling topic for a user account: devices logged in under the same account join here. */
+    fun userTopic(userId: String): String = "user:$userId"
 }
